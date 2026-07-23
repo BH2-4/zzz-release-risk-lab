@@ -1,6 +1,6 @@
 # ZZZ Release Risk Lab / 绝区零地区发行风险沙盘
 
-> ProgramE · 3D 演化观察器 · 数据 Beta 0.3 · 非官方研究原型
+> ProgramE · 3D 演化观察器 · 数据 Beta 0.4 · 非官方研究原型
 
 一个用社会学理论、公开历史案例和合成利益相关者，对《绝区零》下一个 42 天全球发行周期进行情景压力测试的 MVP。
 
@@ -33,6 +33,7 @@
 - [x] 42 天逐 Agent 可视回放数据与 Reverse 空值契约
 - [x] 独立 3D 演化观察器（125 个棋子、42 天回放、策略差值与 Agent 下钻）
 - [x] 100 组配对运行的逐日 P10/P50/P90 假设敏感性数据
+- [x] 42 天层级、领域、地区 P10/P50/P90 随机访问数据
 - [x] 现场可操作界面（桌面与移动端 E2E 已通过）
 - [ ] Injective 测试网承诺记录
 - [x] 公开 GitHub 仓库
@@ -74,11 +75,13 @@ npm start
 
 - [Round-0 实验记录](experiments/round-0.md)
 - [Beta 0.3 配对敏感性与回放产物记录](experiments/beta0.3.md)
+- [Beta 0.4 逐日分层演化数据记录](experiments/beta0.4.md)
 - [研究库与证据等级](research/README.md)
 - `src/model.js`：42 天多层情景模拟与集合区间。
 - `src/visualization-data.js`：渲染器无关的棋盘定位、正面/Reverse 通道与策略差值数据。
 - `src/visualization-bundle.js`：浏览器可逐日随机访问的紧凑整数帧编码与解码器。
-- `experiments/output/visual-data-beta0.3.json`：3D 页面消费的确定性逐 Agent 回放与配对假设敏感性数据包。
+- `src/sensitivity-data.js`：聚合与分层假设敏感性区间的版本化编码及随机访问解码器。
+- `experiments/output/visual-data-beta0.4.json`：3D 页面消费的确定性逐 Agent 回放、聚合与逐日分层敏感性数据包。
 - `experiments/output/visual-data-manifest.json`：数据包字节长度、SHA-256 与能力边界清单。
 - `simulation/`：Three.js 演化回放观察器（目录名为兼容 URL 保留），不属于 `roadshow/beta0.1`。
 - `src/injective.js`：Injective EVM Testnet 配置、钱包连接与无私钥交易编码。

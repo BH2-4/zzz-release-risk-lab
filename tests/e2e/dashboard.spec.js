@@ -177,13 +177,16 @@ test('standalone 3D observer renders and replays the full 42-day evolution', asy
     artifactVersion: window.__evolutionDiagnostics.artifactVersion(),
     capabilities: window.__evolutionDiagnostics.sensitivityCapabilities(),
     day42: window.__evolutionDiagnostics.sensitivityDay('delta', 42),
+    day25Levels: window.__evolutionDiagnostics.sensitivitySegmentDay('candidate', 'level', 25),
   }))
-  expect(dataContract.artifactVersion).toBe('visual-data-beta0.3')
+  expect(dataContract.artifactVersion).toBe('visual-data-beta0.4')
   expect(dataContract.capabilities.dailyAggregateBands).toBe(true)
+  expect(dataContract.capabilities.dailySegmentBands).toBe(true)
   expect(dataContract.capabilities.perAgentBands).toBe(false)
   expect(dataContract.day42.risk.p10).toBeLessThanOrEqual(dataContract.day42.risk.p50)
   expect(dataContract.day42.risk.p50).toBeLessThanOrEqual(dataContract.day42.risk.p90)
   expect(dataContract.day42.risk.p50).toBeLessThan(0)
+  expect(dataContract.day25Levels).toHaveLength(5)
 
   const point = await page.evaluate(() => window.__evolutionDiagnostics.agentScreenPoint('S063'))
   await page.mouse.click(point.x, point.y)

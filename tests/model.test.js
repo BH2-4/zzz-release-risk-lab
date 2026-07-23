@@ -10,6 +10,7 @@ const {
   runEnsemble,
   runPairedEnsemble,
   runSimulation,
+  runSimulationSegmentTrace,
   runSimulationTrace,
   validateScenario,
 } = require('../src/model.js')
@@ -166,6 +167,25 @@ test('runSimulationTrace preserves all 42 daily states for every agent', () => {
   }
 })
 
+test('runSimulationSegmentTrace preserves daily macro and micro slices without Agent payloads', () => {
+  const population = createPopulation({ size: 125, seed: 11 })
+  const result = runSimulationSegmentTrace({
+    scenario: rewardScenario,
+    response: correctiveResponse,
+    population,
+    seed: 19,
+  })
+
+  assert.equal(result.segmentTimeline.length, 42)
+  assert.equal(Object.keys(result.segmentTimeline[0].byLevel).length, 5)
+  assert.equal(Object.keys(result.segmentTimeline[0].byDomain).length, 5)
+  assert.equal(Object.keys(result.segmentTimeline[0].byRegion).length, 5)
+  assert.deepEqual(result.segmentTimeline.at(-1).byLevel, result.byLevel)
+  assert.deepEqual(result.segmentTimeline.at(-1).byDomain, result.byDomain)
+  assert.deepEqual(result.segmentTimeline.at(-1).byRegion, result.byRegion)
+  assert.equal(Object.hasOwn(result, 'agentTimeline'), false)
+})
+
 test('runSimulationTrace is deterministic and agrees with aggregate risk', () => {
   const population = createPopulation({ size: 125, seed: 17 })
   const options = {
@@ -317,6 +337,36 @@ test('runPairedEnsemble exposes aligned daily and final-segment sensitivity band
       assert.ok(interval.p50 <= interval.p90)
     }
   }
+})
+
+test('runPairedEnsemble optionally exposes paired daily segment bands for evolution front ends', () => {
+  const result = runPairedEnsemble({
+    scenario: rewardScenario,
+    baselineResponse: silence,
+    candidateResponse: correctiveResponse,
+    runs: 12,
+    populationSize: 125,
+    seed: 41,
+    includeSegmentTimeline: true,
+  })
+
+  assert.equal(result.schemaVersion, 'paired-ensemble/1.1')
+  assert.equal(result.segmentTimeline.dayCount, 42)
+  assert.deepEqual(result.segmentTimeline.axes.level.order, [
+    'individual',
+    'group',
+    'region',
+    'country',
+    'international',
+  ])
+  assert.equal(result.segmentTimeline.axes.domain.candidate.length, 42)
+  assert.equal(result.segmentTimeline.axes.region.delta.length, 42)
+  assert.equal(result.segmentTimeline.axes.level.baseline[0].day, 1)
+  assert.equal(result.segmentTimeline.axes.level.baseline.at(-1).day, 42)
+  assert.deepEqual(
+    result.segmentTimeline.axes.level.baseline.at(-1).values,
+    result.segments.level.baseline,
+  )
 })
 
 test('runPairedEnsemble validates run count and distinct strategy inputs', () => {

@@ -30,7 +30,7 @@ flowchart LR
 | `src/visualization-data.js` | Renderer-neutral board identities, per-agent visual frames, unavailable Reverse channels and strategy deltas |
 | `src/visualization-bundle.js` | Fixed-width integer encoding, daily random access and browser decoding without simulation logic |
 | `src/sensitivity-data.js` | Paired P10/P50/P90 encoding and browser decoding with unavailable-channel declarations |
-| `scripts/run-data-beta03.js` | Deterministically generate Beta 0.3 replay, paired sensitivity data, byte length and SHA-256 manifest |
+| `scripts/run-data-beta04.js` | Deterministically generate Beta 0.4 replay, daily segment sensitivity data, byte length and SHA-256 manifest |
 | `simulation/piece-geometries.js` | Five procedural piece silhouettes mapped to the five social levels |
 | `simulation/scene.js` | Three.js instancing, 45-60 degree board, Reverse shadows, pressure, fragments, raycasting and pixel diagnostics |
 | `simulation/app.js` | Manifest verification, 42-day replay, baseline/candidate/delta switching and source-day inspection |

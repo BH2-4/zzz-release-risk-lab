@@ -34,10 +34,11 @@ test('sensitivity data module exposes a browser API without CommonJS globals', (
   const context = loadInBrowserContext('sensitivity-data.js')
   assert.equal(typeof context.ZZZSensitivityData.createSensitivityBundle, 'function')
   assert.equal(typeof context.ZZZSensitivityData.decodeSensitivityDay, 'function')
+  assert.equal(typeof context.ZZZSensitivityData.decodeSensitivitySegmentDay, 'function')
   assert.equal(typeof context.ZZZSensitivityData.decodeSensitivitySegments, 'function')
   assert.equal(
     context.ZZZSensitivityData.SENSITIVITY_BUNDLE_SCHEMA_VERSION,
-    'sensitivity-bundle/1.0',
+    'sensitivity-bundle/1.1',
   )
 })
 

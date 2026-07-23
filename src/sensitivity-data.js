@@ -1,7 +1,15 @@
 'use strict'
 
-const SENSITIVITY_BUNDLE_SCHEMA_VERSION = 'sensitivity-bundle/1.0'
-const PAIRED_ENSEMBLE_SCHEMA_VERSION = 'paired-ensemble/1.0'
+const SENSITIVITY_BUNDLE_SCHEMA_VERSION = 'sensitivity-bundle/1.1'
+const LEGACY_SENSITIVITY_BUNDLE_SCHEMA_VERSION = 'sensitivity-bundle/1.0'
+const PAIRED_ENSEMBLE_SCHEMA_VERSIONS = Object.freeze([
+  'paired-ensemble/1.0',
+  'paired-ensemble/1.1',
+])
+const SENSITIVITY_BUNDLE_SCHEMA_VERSIONS = Object.freeze([
+  LEGACY_SENSITIVITY_BUNDLE_SCHEMA_VERSION,
+  SENSITIVITY_BUNDLE_SCHEMA_VERSION,
+])
 const VIEWS = Object.freeze(['baseline', 'candidate', 'delta'])
 const AXES = Object.freeze(['level', 'domain', 'region'])
 const QUANTILES = Object.freeze(['p10', 'p50', 'p90'])
@@ -42,7 +50,7 @@ function validateEvidence(evidence) {
 }
 
 function validateEnsemble(ensemble) {
-  if (ensemble?.schemaVersion !== PAIRED_ENSEMBLE_SCHEMA_VERSION) {
+  if (!PAIRED_ENSEMBLE_SCHEMA_VERSIONS.includes(ensemble?.schemaVersion)) {
     throw new TypeError('A supported paired ensemble is required')
   }
   if (!Number.isInteger(ensemble.runs) || ensemble.runs < 3) {
@@ -72,6 +80,36 @@ function validateEnsemble(ensemble) {
       assertInterval(segment[view]?.[key], `${view} ${axis} ${key}`)
     }))
   })
+  if (ensemble.schemaVersion === 'paired-ensemble/1.1') {
+    if (ensemble.segmentTimeline?.dayCount !== ensemble.cycleDays) {
+      throw new TypeError('Paired ensemble segment timeline must match its cycle')
+    }
+    AXES.forEach((axis) => {
+      const segment = ensemble.segmentTimeline.axes?.[axis]
+      if (!segment || !Array.isArray(segment.order) || segment.order.length === 0) {
+        throw new TypeError(`Paired ensemble daily ${axis} segments are required`)
+      }
+      const finalOrder = ensemble.segments[axis].order
+      if (
+        segment.order.length !== finalOrder.length ||
+        segment.order.some((key, index) => key !== finalOrder[index])
+      ) {
+        throw new TypeError(`Paired ensemble daily ${axis} segment order must match final segments`)
+      }
+      VIEWS.forEach((view) => {
+        const frames = segment[view]
+        if (!Array.isArray(frames) || frames.length !== ensemble.cycleDays) {
+          throw new TypeError(`Paired ensemble daily ${axis} ${view} width is invalid`)
+        }
+        frames.forEach((frame, index) => {
+          if (frame.day !== index + 1) throw new TypeError('Paired ensemble segment days must be contiguous')
+          segment.order.forEach((key) => {
+            assertInterval(frame.values?.[key], `${view} day ${frame.day} ${axis} ${key}`)
+          })
+        })
+      })
+    })
+  }
 }
 
 function packTimeline(ensemble, view) {
@@ -90,12 +128,22 @@ function packSegments(segment, view) {
   ]))
 }
 
+function packSegmentTimeline(segment, view) {
+  return Object.fromEntries(QUANTILES.map((quantile) => [
+    quantile,
+    segment[view].flatMap((frame) => segment.order.map((key) => frame.values[key][quantile])),
+  ]))
+}
+
 function createSensitivityBundle({ ensemble, evidence }) {
   validateEnsemble(ensemble)
   validateEvidence(evidence)
+  const hasDailySegmentBands = ensemble.schemaVersion === 'paired-ensemble/1.1'
 
   return {
-    schemaVersion: SENSITIVITY_BUNDLE_SCHEMA_VERSION,
+    schemaVersion: hasDailySegmentBands
+      ? SENSITIVITY_BUNDLE_SCHEMA_VERSION
+      : LEGACY_SENSITIVITY_BUNDLE_SCHEMA_VERSION,
     ensembleSchemaVersion: ensemble.schemaVersion,
     claimType: ensemble.claimType,
     source: {
@@ -113,6 +161,7 @@ function createSensitivityBundle({ ensemble, evidence }) {
       dailyAggregateBands: true,
       finalSegmentBands: true,
       pairedStrategyDelta: true,
+      ...(hasDailySegmentBands ? { dailySegmentBands: true } : {}),
       perAgentBands: false,
       relationEdges: false,
       reverseVoice: false,
@@ -138,12 +187,21 @@ function createSensitivityBundle({ ensemble, evidence }) {
       finalDay: ensemble.segments.finalDay,
       axes: Object.fromEntries(AXES.map((axis) => {
         const segment = ensemble.segments[axis]
-        return [axis, {
+        const packed = {
           order: [...segment.order],
           baseline: packSegments(segment, 'baseline'),
           candidate: packSegments(segment, 'candidate'),
           delta: packSegments(segment, 'delta'),
-        }]
+        }
+        if (hasDailySegmentBands) {
+          const segmentTimeline = ensemble.segmentTimeline.axes[axis]
+          packed.timeline = {
+            baseline: packSegmentTimeline(segmentTimeline, 'baseline'),
+            candidate: packSegmentTimeline(segmentTimeline, 'candidate'),
+            delta: packSegmentTimeline(segmentTimeline, 'delta'),
+          }
+        }
+        return [axis, packed]
       })),
     },
     disclaimer: `${ensemble.disclaimer} P10/P50/P90 仅描述这 ${ensemble.runs} 次有界模型运行的分布。`,
@@ -151,7 +209,7 @@ function createSensitivityBundle({ ensemble, evidence }) {
 }
 
 function validateBundle(bundle) {
-  if (bundle?.schemaVersion !== SENSITIVITY_BUNDLE_SCHEMA_VERSION) {
+  if (!SENSITIVITY_BUNDLE_SCHEMA_VERSIONS.includes(bundle?.schemaVersion)) {
     throw new TypeError(`Unsupported sensitivity bundle schema: ${bundle?.schemaVersion}`)
   }
   if (!Number.isInteger(bundle.timeline?.dayCount) || bundle.timeline.dayCount < 1) {
@@ -202,10 +260,42 @@ function decodeSensitivitySegments(bundle, { view, axis }) {
   })
 }
 
+function decodeSensitivitySegmentDay(bundle, { view, axis, day }) {
+  validateBundle(bundle)
+  validateView(view)
+  if (!AXES.includes(axis)) throw new TypeError(`Unsupported sensitivity axis: ${axis}`)
+  if (bundle.capabilities?.dailySegmentBands !== true) {
+    throw new TypeError('Daily sensitivity segment bands are unavailable')
+  }
+  if (!Number.isInteger(day) || day < 1 || day > bundle.timeline.dayCount) {
+    throw new TypeError('Sensitivity segment day must be within the simulation cycle')
+  }
+  const segment = bundle.segments?.axes?.[axis]
+  if (!segment || !Array.isArray(segment.order)) {
+    throw new TypeError(`Sensitivity ${axis} segments are unavailable`)
+  }
+  const width = segment.order.length
+  const expectedLength = bundle.timeline.dayCount * width
+  const offset = (day - 1) * width
+  return segment.order.map((key, index) => {
+    const decoded = { key }
+    QUANTILES.forEach((quantile) => {
+      const values = segment.timeline?.[view]?.[quantile]
+      if (!Array.isArray(values) || values.length !== expectedLength) {
+        throw new TypeError(`Sensitivity daily ${axis} segment width is invalid`)
+      }
+      decoded[quantile] = values[offset + index]
+    })
+    assertInterval(decoded, `${view} day ${day} ${axis} ${key}`)
+    return decoded
+  })
+}
+
 const sensitivityDataApi = {
   SENSITIVITY_BUNDLE_SCHEMA_VERSION,
   createSensitivityBundle,
   decodeSensitivityDay,
+  decodeSensitivitySegmentDay,
   decodeSensitivitySegments,
 }
 

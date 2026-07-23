@@ -6,6 +6,7 @@ const {
   SENSITIVITY_BUNDLE_SCHEMA_VERSION,
   createSensitivityBundle,
   decodeSensitivityDay,
+  decodeSensitivitySegmentDay,
   decodeSensitivitySegments,
 } = require('../src/sensitivity-data.js')
 const {
@@ -38,10 +39,23 @@ function createFixture() {
   return createSensitivityBundle({ ensemble, evidence })
 }
 
+function createEvolutionFixture() {
+  const ensemble = runPairedEnsemble({
+    scenario,
+    baselineResponse,
+    candidateResponse,
+    runs: 12,
+    populationSize: 125,
+    seed: 41,
+    includeSegmentTimeline: true,
+  })
+  return createSensitivityBundle({ ensemble, evidence })
+}
+
 test('sensitivity bundle exposes compact daily bands and explicit future channel boundaries', () => {
   const bundle = createFixture()
 
-  assert.equal(bundle.schemaVersion, SENSITIVITY_BUNDLE_SCHEMA_VERSION)
+  assert.equal(bundle.schemaVersion, 'sensitivity-bundle/1.0')
   assert.equal(bundle.timeline.dayCount, 42)
   assert.equal(bundle.timeline.candidate.risk.p50.length, 42)
   assert.equal(bundle.segments.axes.level.order.length, 5)
@@ -69,6 +83,54 @@ test('sensitivity decoder supports daily and segment random access for future fr
   assert.deepEqual(Object.keys(domains[0]), ['key', 'p10', 'p50', 'p90'])
 })
 
+test('sensitivity bundle 1.1 packs and decodes daily macro and micro segment bands', () => {
+  const bundle = createEvolutionFixture()
+  const day25 = decodeSensitivitySegmentDay(bundle, {
+    view: 'candidate',
+    axis: 'level',
+    day: 25,
+  })
+  const day42 = decodeSensitivitySegmentDay(bundle, {
+    view: 'candidate',
+    axis: 'domain',
+    day: 42,
+  })
+  const finalDomains = decodeSensitivitySegments(bundle, { view: 'candidate', axis: 'domain' })
+
+  assert.equal(bundle.schemaVersion, 'sensitivity-bundle/1.1')
+  assert.equal(bundle.capabilities.dailySegmentBands, true)
+  assert.equal(bundle.segments.axes.level.timeline.candidate.p50.length, 42 * 5)
+  assert.equal(day25.length, 5)
+  assert.deepEqual(Object.keys(day25[0]), ['key', 'p10', 'p50', 'p90'])
+  assert.deepEqual(day42, finalDomains)
+})
+
+test('daily segment decoder preserves Beta 0.3 compatibility and validates selectors', () => {
+  const legacy = createFixture()
+  const current = createEvolutionFixture()
+
+  assert.equal(legacy.schemaVersion, 'sensitivity-bundle/1.0')
+  assert.throws(
+    () => decodeSensitivitySegmentDay(legacy, { view: 'candidate', axis: 'level', day: 1 }),
+    /unavailable/i,
+  )
+  assert.throws(
+    () => decodeSensitivitySegmentDay(current, { view: 'candidate', axis: 'level', day: 0 }),
+    /day/i,
+  )
+  assert.throws(
+    () => decodeSensitivitySegmentDay(current, { view: 'candidate', axis: 'language', day: 1 }),
+    /axis/i,
+  )
+
+  const invalidWidth = structuredClone(current)
+  invalidWidth.segments.axes.level.timeline.candidate.p10.pop()
+  assert.throws(
+    () => decodeSensitivitySegmentDay(invalidWidth, { view: 'candidate', axis: 'level', day: 1 }),
+    /width/i,
+  )
+})
+
 test('sensitivity adapter rejects incomplete evidence and decoder rejects invalid selectors', () => {
   const ensemble = runPairedEnsemble({
     scenario,
@@ -87,4 +149,19 @@ test('sensitivity adapter rejects incomplete evidence and decoder rejects invali
     () => decodeSensitivitySegments(bundle, { view: 'candidate', axis: 'language' }),
     /axis/i,
   )
+})
+
+test('sensitivity adapter rejects daily segment order that diverges from final segments', () => {
+  const ensemble = runPairedEnsemble({
+    scenario,
+    baselineResponse,
+    candidateResponse,
+    runs: 6,
+    populationSize: 125,
+    seed: 41,
+    includeSegmentTimeline: true,
+  })
+  ensemble.segmentTimeline.axes.level.order.reverse()
+
+  assert.throws(() => createSensitivityBundle({ ensemble, evidence }), /order/i)
 })

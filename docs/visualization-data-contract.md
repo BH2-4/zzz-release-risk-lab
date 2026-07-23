@@ -1,8 +1,8 @@
 # 3D 前端可视化数据契约
 
-状态：`Beta 0.3`
+状态：`Beta 0.4`
 回放契约：`agent-trace/1.1`（可解释模式）→ `visual-comparison/1.0` → `visual-bundle/1.0`
-敏感性契约：`paired-ensemble/1.0` → `sensitivity-bundle/1.0`
+敏感性契约：`paired-ensemble/1.1` → `sensitivity-bundle/1.1`
 
 ## 目标
 
@@ -20,7 +20,7 @@
 假设敏感性：
 
 1. `runPairedEnsemble()`：对同一组有界假设扰动，同时运行沉默与候选响应，二者共享情景、合成人群和模拟种子。
-2. `createSensitivityBundle()`：编码逐日聚合风险及第 42 天层级、领域、地区的 P10/P50/P90，不生成 Agent 级区间。
+2. `createSensitivityBundle()`：编码逐日聚合风险，以及 42 天内层级、领域、地区的 P10/P50/P90，不生成 Agent 级区间。
 
 `runSimulation()` 默认不返回 `agentTimeline`，避免 100 次集合实验为不使用的视觉数据分配内存。
 
@@ -72,13 +72,15 @@ Trace 同时包含 `simulationSeed` 和 `populationFingerprint`。指纹覆盖 A
 
 ## 假设敏感性
 
-Beta 0.3 在固定种子逐 Agent 回放之外，增加 100 组配对运行。每组同时扰动事件强度与响应有效性，因此候选方案减去沉默方案时不会混入不同合成人群或不同随机种子造成的无关差异。
+Beta 0.4 在固定种子逐 Agent 回放之外，执行 100 组配对运行。每组同时扰动事件强度与响应有效性，因此候选方案减去沉默方案时不会混入不同合成人群或不同随机种子造成的无关差异。
 
 - P10/P50/P90 是有界模型假设下的运行分布，界面只能称为“假设敏感性区间”。
 - 它不是统计置信区间、现实概率或真实人群预测。
-- `dailyAggregateBands`、`finalSegmentBands`、`pairedStrategyDelta` 为可用。
+- `dailyAggregateBands`、`dailySegmentBands`、`finalSegmentBands`、`pairedStrategyDelta` 为可用。
 - `perAgentBands`、`relationEdges`、`reverseVoice`、`reverseHeat` 仍为不可用。
 - Three.js 棋子继续回放一条确定性代表路径，不能把单个棋子的轨迹解释成现实个体预测。
+- `segments.axes[axis].timeline[view][quantile]` 使用按日、再按固定 `order` 展平的数组；长度固定为 `42 x 5`。
+- 前端用 `decodeSensitivitySegmentDay()` 读取任意一天，不直接依赖展平下标。
 
 ## 前端接入规则
 
@@ -98,11 +100,13 @@ npm run experiment:visual
 
 产物：
 
-- `experiments/output/visual-data-beta0.3.json`：确定性逐 Agent 回放与配对假设敏感性数据包。
+- `experiments/output/visual-data-beta0.4.json`：确定性逐 Agent 回放、配对聚合与逐日分层假设敏感性数据包。
 - `experiments/output/visual-data-manifest.json`：字节长度、SHA-256、125 个 Agent、42 天与能力声明。
+- `experiments/output/visual-data-beta0.3.json`：保留的聚合敏感性旧版产物。
+- `experiments/output/visual-data-beta0.3-manifest.json`：Beta 0.3 对应的独立清单。
 - `experiments/output/visual-data-beta0.2.json`：保留的旧版确定性回放产物。
 - `experiments/output/visual-data-beta0.2-manifest.json`：旧版产物对应的独立清单。
 
 浏览器必须先校验清单，再创建 3D 场景。脚本不写入时间戳；相同代码、参数与种子会生成完全一致的字节。
 
-旧版完整对象帧仍可用 `npm run experiment:visual:v1` 生成，Beta 0.2 可用 `npm run experiment:visual:v2` 重建。3D 观察器只读取当前 Beta 0.3 清单，不读取路演文件。
+旧版完整对象帧仍可用 `npm run experiment:visual:v1` 生成，Beta 0.2 与 Beta 0.3 分别可用 `npm run experiment:visual:v2`、`npm run experiment:visual:v3` 重建。3D 观察器只读取当前 Beta 0.4 清单，不读取路演文件。

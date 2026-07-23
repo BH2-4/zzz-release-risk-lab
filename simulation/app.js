@@ -118,11 +118,24 @@ async function fetchVerifiedArtifact() {
   const manifestResponse = await fetch('../experiments/output/visual-data-manifest.json', { cache: 'no-store' })
   if (!manifestResponse.ok) throw new Error(`数据清单请求失败（${manifestResponse.status}）`)
   const manifest = await manifestResponse.json()
-  if (!['visual-data-manifest/1.0', 'visual-data-manifest/1.1'].includes(manifest.manifestVersion)) {
+  if (![
+    'visual-data-manifest/1.0',
+    'visual-data-manifest/1.1',
+    'visual-data-manifest/1.2',
+  ].includes(manifest.manifestVersion)) {
     throw new Error('不支持的数据清单版本')
   }
-  if (manifest.manifestVersion === 'visual-data-manifest/1.1' && !manifest.sensitivitySchemaVersion) {
+  if (manifest.manifestVersion !== 'visual-data-manifest/1.0' && !manifest.sensitivitySchemaVersion) {
     throw new Error('当前数据清单缺少敏感性契约版本')
+  }
+  if (
+    manifest.manifestVersion === 'visual-data-manifest/1.2' &&
+    (
+      manifest.sensitivitySchemaVersion !== 'sensitivity-bundle/1.1' ||
+      manifest.capabilities?.dailySegmentBands !== true
+    )
+  ) {
+    throw new Error('当前数据清单缺少受支持的逐日分层契约')
   }
   if (!/^[a-z0-9.-]+\.json$/.test(manifest.artifact)) throw new Error('数据清单包含无效文件名')
   if (!Number.isSafeInteger(manifest.byteLength) || manifest.byteLength <= 0) throw new Error('数据清单包含无效字节长度')
@@ -146,6 +159,15 @@ async function fetchVerifiedArtifact() {
     }
     if (!globalThis.ZZZSensitivityData?.decodeSensitivityDay) {
       throw new Error('浏览器敏感性解码器未载入')
+    }
+    if (
+      manifest.capabilities?.dailySegmentBands === true &&
+      (
+        artifact.sensitivity.capabilities?.dailySegmentBands !== true ||
+        !globalThis.ZZZSensitivityData?.decodeSensitivitySegmentDay
+      )
+    ) {
+      throw new Error('逐日分层能力与数据清单不一致')
     }
     if (artifact.sensitivity.timeline?.dayCount !== manifest.cycleDays) {
       throw new Error('敏感性周期与数据清单不一致')
@@ -441,6 +463,13 @@ async function start() {
       sensitivityDay: (view, day) => {
         if (!state.sensitivity) throw new Error('当前产物不包含假设敏感性数据')
         return globalThis.ZZZSensitivityData.decodeSensitivityDay(state.sensitivity, { view, day })
+      },
+      sensitivitySegmentDay: (view, axis, day) => {
+        if (!state.sensitivity) throw new Error('当前产物不包含假设敏感性数据')
+        return globalThis.ZZZSensitivityData.decodeSensitivitySegmentDay(
+          state.sensitivity,
+          { view, axis, day },
+        )
       },
       sensitivitySegments: (view, axis) => {
         if (!state.sensitivity) throw new Error('当前产物不包含假设敏感性数据')

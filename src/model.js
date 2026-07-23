@@ -153,7 +153,7 @@ function createDriverBreakdown(contributions, roundedRisk) {
 
 function runSimulationCore(
   { scenario, response = {}, population, seed = 1 },
-  { includeAgentTimeline = false, includeDrivers = false } = {},
+  { includeAgentTimeline = false, includeDrivers = false, includeSegmentTimeline = false } = {},
 ) {
   const validation = validateScenario(scenario)
   if (!validation.valid) throw new TypeError(validation.errors.join('; '))
@@ -169,6 +169,7 @@ function runSimulationCore(
   let peakRisks = population.map(() => 0)
   const timeline = []
   const agentTimeline = includeAgentTimeline ? [] : null
+  const segmentTimeline = includeSegmentTimeline ? [] : null
 
   for (let day = 1; day <= CYCLE_DAYS; day += 1) {
     const age = day - scenario.eventDay
@@ -249,6 +250,14 @@ function runSimulationCore(
       risk: round(previousNetworkRisk * 100),
     }
     timeline.push(frame)
+    if (includeSegmentTimeline) {
+      segmentTimeline.push({
+        day,
+        byLevel: aggregatePopulation(population, latestRisks, 'level'),
+        byDomain: aggregatePopulation(population, latestRisks, 'domain'),
+        byRegion: aggregatePopulation(population, latestRisks, 'region'),
+      })
+    }
     if (includeAgentTimeline) {
       agentTimeline.push({
         ...frame,
@@ -285,6 +294,7 @@ function runSimulationCore(
     if (includeDrivers) result.driverFields = TRACE_DRIVER_FIELDS
     result.agentTimeline = agentTimeline
   }
+  if (includeSegmentTimeline) result.segmentTimeline = segmentTimeline
   return result
 }
 
@@ -297,6 +307,10 @@ function runSimulationTrace(options) {
     includeAgentTimeline: true,
     includeDrivers: options?.includeDrivers === true,
   })
+}
+
+function runSimulationSegmentTrace(options) {
+  return runSimulationCore(options, { includeSegmentTimeline: true })
 }
 
 function compareResponses({ scenario, baselineResponse, candidateResponse, population, seed = 1 }) {
@@ -389,7 +403,7 @@ function createSegmentIntervals(outcomes, key, order) {
     interval(outcomes.map((outcome) => outcome[strategy][field][name])),
   ]))
   return {
-    order,
+    order: [...order],
     baseline: strategyIntervals('baseline'),
     candidate: strategyIntervals('candidate'),
     delta: Object.fromEntries(order.map((name) => [
@@ -403,6 +417,34 @@ function createSegmentIntervals(outcomes, key, order) {
   }
 }
 
+function createDailySegmentIntervals(outcomes, key, order) {
+  const field = `by${key[0].toUpperCase()}${key.slice(1)}`
+  const framesFor = (strategy) => Array.from({ length: CYCLE_DAYS }, (_, index) => ({
+    day: index + 1,
+    values: Object.fromEntries(order.map((name) => [
+      name,
+      interval(outcomes.map((outcome) => outcome[strategy].segmentTimeline[index][field][name])),
+    ])),
+  }))
+  const deltaFrames = Array.from({ length: CYCLE_DAYS }, (_, index) => ({
+    day: index + 1,
+    values: Object.fromEntries(order.map((name) => [
+      name,
+      deltaInterval(
+        outcomes,
+        (baseline) => baseline.segmentTimeline[index][field][name],
+        (candidate) => candidate.segmentTimeline[index][field][name],
+      ),
+    ])),
+  }))
+  return {
+    order: [...order],
+    baseline: framesFor('baseline'),
+    candidate: framesFor('candidate'),
+    delta: deltaFrames,
+  }
+}
+
 function runPairedEnsemble({
   scenario,
   baselineResponse,
@@ -410,6 +452,7 @@ function runPairedEnsemble({
   runs = 30,
   populationSize = 125,
   seed = 1,
+  includeSegmentTimeline = false,
 }) {
   validateEnsembleRuns(runs)
   const baselineResponseId = baselineResponse?.id || 'unnamed-baseline'
@@ -419,18 +462,19 @@ function runPairedEnsemble({
   }
 
   const ensembleRandom = createRandom(seed ^ 0xa11ce)
+  const run = includeSegmentTimeline ? runSimulationSegmentTrace : runSimulation
   const outcomes = Array.from({ length: runs }, (_, index) => {
     const ensembleCase = createEnsembleCase({ scenario, ensembleRandom, seed, index })
     const population = createPopulation({ size: populationSize, seed: ensembleCase.runSeed })
     const simulationSeed = ensembleCase.runSeed + 17
     return {
-      baseline: runSimulation({
+      baseline: run({
         scenario: ensembleCase.scenario,
         response: scaleResponse(baselineResponse, ensembleCase.responseFactor),
         population,
         seed: simulationSeed,
       }),
-      candidate: runSimulation({
+      candidate: run({
         scenario: ensembleCase.scenario,
         response: scaleResponse(candidateResponse, ensembleCase.responseFactor),
         population,
@@ -452,8 +496,8 @@ function runPairedEnsemble({
     },
   }))
 
-  return {
-    schemaVersion: 'paired-ensemble/1.0',
+  const result = {
+    schemaVersion: includeSegmentTimeline ? 'paired-ensemble/1.1' : 'paired-ensemble/1.0',
     claimType: 'scenario-index',
     scenarioId: scenario.id,
     runs,
@@ -492,6 +536,17 @@ function runPairedEnsemble({
     },
     disclaimer: '区间表示有界模型假设扰动下的情景指数敏感性，不是现实概率、统计置信区间或真实人群预测。',
   }
+  if (includeSegmentTimeline) {
+    result.segmentTimeline = {
+      dayCount: CYCLE_DAYS,
+      axes: {
+        level: createDailySegmentIntervals(outcomes, 'level', LEVELS),
+        domain: createDailySegmentIntervals(outcomes, 'domain', DOMAINS),
+        region: createDailySegmentIntervals(outcomes, 'region', REGIONS),
+      },
+    }
+  }
+  return result
 }
 
 function assessEvidenceReadiness({ theorySources = [], crisisSources = [] } = {}) {
@@ -523,6 +578,7 @@ const modelApi = {
   runEnsemble,
   runPairedEnsemble,
   runSimulation,
+  runSimulationSegmentTrace,
   runSimulationTrace,
   validateScenario,
 }

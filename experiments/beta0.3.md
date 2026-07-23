@@ -39,7 +39,7 @@ Beta 0.3 保留这条逐 Agent 代表性路径，同时增加 100 组配对运�
 ## 复现
 
 ```bash
-npm run experiment:visual
+npm run experiment:visual:v3
 ```
 
-当前产物是 `experiments/output/visual-data-beta0.3.json`，当前清单是 `experiments/output/visual-data-manifest.json`。
+归档产物是 `experiments/output/visual-data-beta0.3.json`，对应清单是 `experiments/output/visual-data-beta0.3-manifest.json`。
