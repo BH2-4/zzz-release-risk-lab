@@ -104,3 +104,47 @@ test('mobile dashboard has no horizontal overflow', async ({ page }, testInfo) =
   expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth)
   await expect(page.getByRole('heading', { name: '绝区零地区发行风险沙盘' })).toBeVisible()
 })
+
+test('pitch deck fits target viewports and supports keyboard navigation', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'viewport matrix runs once')
+  const viewports = [
+    { name: 'wide', width: 1920, height: 1080 },
+    { name: 'desktop', width: 1280, height: 720 },
+    { name: 'tablet', width: 768, height: 1024 },
+    { name: 'phone', width: 375, height: 667 },
+    { name: 'landscape-phone', width: 667, height: 375 },
+  ]
+
+  for (const viewport of viewports) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height })
+    await page.goto('/pitch.html')
+    const overflow = await page.locator('.slide').evaluateAll((slides) => slides.map((slide, index) => ({
+      index,
+      horizontal: slide.scrollWidth - slide.clientWidth,
+      vertical: slide.scrollHeight - slide.clientHeight,
+    })).filter((slide) => slide.horizontal > 1 || slide.vertical > 1))
+    expect(overflow, `${viewport.name} slide overflow`).toEqual([])
+  }
+
+  await page.setViewportSize({ width: 1280, height: 720 })
+  await page.goto('/pitch.html')
+  await expect(page.getByText('1 / 10', { exact: true })).toBeVisible()
+  await expect(page.locator('#slide-1')).toHaveClass(/is-active/)
+  await expect(page.locator('#slide-1 [data-reveal]').last()).toHaveCSS('opacity', '1')
+  await page.screenshot({ path: 'artifacts/screenshots/pitch-title.png' })
+  await page.keyboard.press('ArrowRight')
+  await expect(page.getByText('2 / 10', { exact: true })).toBeVisible()
+  await expect(page.locator('#slide-2')).toHaveClass(/is-active/)
+  await page.keyboard.press('End')
+  await expect(page.getByText('10 / 10', { exact: true })).toBeVisible()
+  await expect(page.locator('#slide-10')).toHaveClass(/is-active/)
+  await expect(page.locator('#slide-10')).toBeInViewport()
+  await expect(page.locator('#slide-10 [data-reveal]').last()).toHaveCSS('opacity', '1')
+  await page.screenshot({ path: 'artifacts/screenshots/pitch-final.png' })
+
+  await page.setViewportSize({ width: 667, height: 375 })
+  await page.goto('/pitch.html#slide-8')
+  await expect(page.locator('#slide-8')).toHaveClass(/is-active/)
+  await expect(page.locator('#slide-8 [data-reveal]').last()).toHaveCSS('opacity', '1')
+  await page.screenshot({ path: 'artifacts/screenshots/pitch-landscape-phone.png' })
+})

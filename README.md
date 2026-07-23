@@ -38,6 +38,7 @@
 
 - [米哈游赛道一页说明](docs/one-page.md)
 - [3-5 分钟 Pitch](docs/pitch.md)
+- [可直接播放的路演页面](pitch.html)
 - [系统架构与信任边界](docs/architecture.md)
 - [Injective 测试网部署手册](docs/deployment.md)
 - [安全说明](SECURITY.md)
