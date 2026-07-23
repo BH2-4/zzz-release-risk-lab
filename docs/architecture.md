@@ -8,8 +8,11 @@ flowchart LR
     D --> E["42-day simulation<br/>5 levels x 5 domains x 5 regions"]
     E --> F["Strategy comparison<br/>silence vs candidate"]
     E --> G["100-run ensemble<br/>P10/P50/P90"]
+    E --> M["Agent trace<br/>42 days x 125 states"]
+    M --> N["Visual replay contract<br/>front / Reverse / delta"]
     F --> H["Browser dashboard"]
     G --> H
+    N --> H
     H --> I["SHA-256 scenario commitment"]
     I --> J["MetaMask / EIP-1193"]
     J --> K["RiskCommitment.sol<br/>Injective EVM Testnet 1439"]
@@ -21,6 +24,8 @@ flowchart LR
 | Component | Responsibility |
 | --- | --- |
 | `src/model.js` | Seeded population, 42-day propagation, comparisons, ensembles and evidence readiness |
+| `src/visualization-data.js` | Renderer-neutral board identities, per-agent visual frames, unavailable Reverse channels and strategy deltas |
+| `scripts/run-visual-replay.js` | Deterministically generate the versioned baseline/candidate/delta JSON artifact for future 2D/3D clients |
 | `src/injective.js` | Network configuration, deterministic hashing, wallet switching, calldata and runtime-code verification |
 | `contracts/RiskCommitment.sol` | Emit scenario hash, coarse risk band, test-INJ pulse and same-transaction refund |
 | `app.js` | Scenario controls, visualization, evidence view and wallet workflow |

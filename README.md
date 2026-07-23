@@ -30,6 +30,7 @@
 - [x] 百人级合成利益相关者
 - [x] 42 天多层扩散引擎
 - [x] Round-0 快速实验与一代校准
+- [x] 42 天逐 Agent 可视回放数据与 Reverse 空值契约
 - [x] 现场可操作界面（桌面与移动端 E2E 已通过）
 - [ ] Injective 测试网承诺记录
 - [ ] 公开 GitHub 仓库
@@ -41,6 +42,7 @@
 - [可直接播放的路演 Beta 0.1](roadshow/beta0.1/index.html)
 - [Beta 0.1 完整讲稿](roadshow/beta0.1/speaker-notes.md)
 - [系统架构与信任边界](docs/architecture.md)
+- [3D 前端可视化数据契约](docs/visualization-data-contract.md)
 - [Injective 测试网部署手册](docs/deployment.md)
 - [安全说明](SECURITY.md)
 
@@ -56,6 +58,7 @@
 npm install
 npm test
 npm run experiment
+npm run experiment:visual
 npm run test:e2e
 npm start
 ```
@@ -65,6 +68,8 @@ npm start
 - [Round-0 实验记录](experiments/round-0.md)
 - [研究库与证据等级](research/README.md)
 - `src/model.js`：42 天多层情景模拟与集合区间。
+- `src/visualization-data.js`：渲染器无关的棋盘定位、正面/Reverse 通道与策略差值数据。
+- `experiments/output/visual-data-beta0.1.json`：供后续 2D/3D 前端直接消费的确定性数据样本。
 - `src/injective.js`：Injective EVM Testnet 配置、钱包连接与无私钥交易编码。
 - `contracts/RiskCommitment.sol`：可编译的最小测试网承诺合约，尚未部署。
 - `index.html`：可现场操作的情景比较、证据审计与测试网提交界面。

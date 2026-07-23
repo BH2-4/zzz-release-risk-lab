@@ -25,6 +25,27 @@ function clamp(value, min = 0, max = 1) {
   return Math.min(max, Math.max(min, value))
 }
 
+function populationFingerprint(population) {
+  const serialized = population.map((agent) => [
+    agent.id,
+    agent.synthetic === true ? 1 : 0,
+    agent.level,
+    agent.domain,
+    agent.region,
+    agent.threshold,
+    agent.susceptibility,
+    agent.influence,
+    agent.institutionalTrust,
+    agent.networkActivity,
+  ].join(':')).join('|')
+  let hash = 0x811c9dc5
+  for (let index = 0; index < serialized.length; index += 1) {
+    hash ^= serialized.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  return `fnv1a32:${(hash >>> 0).toString(16).padStart(8, '0')}`
+}
+
 function createPopulation({ size = 125, seed = 1 } = {}) {
   if (!Number.isInteger(size) || size < 25) {
     throw new TypeError('Population size must be an integer of at least 25')
@@ -102,7 +123,7 @@ function aggregatePopulation(population, risks, key) {
   )
 }
 
-function runSimulation({ scenario, response = {}, population, seed = 1 }) {
+function runSimulationCore({ scenario, response = {}, population, seed = 1 }, includeAgentTimeline) {
   const validation = validateScenario(scenario)
   if (!validation.valid) throw new TypeError(validation.errors.join('; '))
   if (!Array.isArray(population) || population.length === 0) {
@@ -116,6 +137,7 @@ function runSimulation({ scenario, response = {}, population, seed = 1 }) {
   let latestRisks = population.map(() => 0)
   let peakRisks = population.map(() => 0)
   const timeline = []
+  const agentTimeline = includeAgentTimeline ? [] : null
 
   for (let day = 1; day <= CYCLE_DAYS; day += 1) {
     const age = day - scenario.eventDay
@@ -123,8 +145,15 @@ function runSimulation({ scenario, response = {}, population, seed = 1 }) {
     const eventPressure = age < 0 ? 0 : Math.exp(-age / 24)
     const networkMomentum = age < 0 ? 0 : Math.min(1, (age + 1) / 7)
 
-    latestRisks = population.map((agent, index) => {
-      if (age < 0) return round(0.025 + random() * 0.018, 4)
+    const latestStates = population.map((agent, index) => {
+      if (age < 0) {
+        return {
+          risk: round(0.025 + random() * 0.018, 4),
+          pressure: 0,
+          networkPressure: 0,
+          responseBuffer: 0,
+        }
+      }
 
       const domainTrigger = scenario.triggers[agent.domain]
       const regionFactor = scenario.regionFactors?.[agent.region] || 1
@@ -145,19 +174,33 @@ function runSimulation({ scenario, response = {}, population, seed = 1 }) {
         amplification * agent.susceptibility -
         trustBuffer +
         noise
-      const intervention = responseActive ? mitigation * (0.17 + scenario.controllability * 0.13) : 0
+      const responseBuffer = responseActive ? mitigation * (0.17 + scenario.controllability * 0.13) : 0
       const persistence = 0.48 + (1 - mitigation) * 0.23
-      const risk = clamp(raw * eventPressure * persistence + raw * 0.34 - intervention)
+      const pressure = clamp(raw * eventPressure * persistence + raw * 0.34)
+      const risk = clamp(pressure - responseBuffer)
       peakRisks[index] = Math.max(peakRisks[index], risk)
-      return round(risk, 4)
+      return {
+        risk: round(risk, 4),
+        pressure: round(pressure, 4),
+        networkPressure: round(clamp(amplification * agent.susceptibility), 4),
+        responseBuffer: round(responseBuffer, 4),
+      }
     })
 
+    latestRisks = latestStates.map((state) => state.risk)
     previousNetworkRisk = average(latestRisks)
-    timeline.push({
+    const frame = {
       day,
       phase: age < 0 ? 'pre-release' : responseActive ? 'response' : 'incident',
       risk: round(previousNetworkRisk * 100),
-    })
+    }
+    timeline.push(frame)
+    if (includeAgentTimeline) {
+      agentTimeline.push({
+        ...frame,
+        agents: latestStates.map((state, index) => ({ id: population[index].id, ...state })),
+      })
+    }
   }
 
   const triggerDrivers = DOMAINS.map((domain) => ({
@@ -166,7 +209,7 @@ function runSimulation({ scenario, response = {}, population, seed = 1 }) {
     score: round(scenario.triggers[domain] * 100),
   })).sort((a, b) => b.score - a.score)
 
-  return {
+  const result = {
     scenarioId: scenario.id,
     responseId: response.id || 'unnamed-response',
     claimType: 'scenario-index',
@@ -181,6 +224,21 @@ function runSimulation({ scenario, response = {}, population, seed = 1 }) {
     topDrivers: triggerDrivers.slice(0, 5),
     agentPeakMean: round(average(peakRisks) * 100),
   }
+  if (includeAgentTimeline) {
+    result.traceVersion = 'agent-trace/1.0'
+    result.simulationSeed = Number(seed)
+    result.populationFingerprint = populationFingerprint(population)
+    result.agentTimeline = agentTimeline
+  }
+  return result
+}
+
+function runSimulation(options) {
+  return runSimulationCore(options, false)
+}
+
+function runSimulationTrace(options) {
+  return runSimulationCore(options, true)
 }
 
 function compareResponses({ scenario, baselineResponse, candidateResponse, population, seed = 1 }) {
@@ -269,8 +327,10 @@ const modelApi = {
   assessEvidenceReadiness,
   compareResponses,
   createPopulation,
+  populationFingerprint,
   runEnsemble,
   runSimulation,
+  runSimulationTrace,
   validateScenario,
 }
 

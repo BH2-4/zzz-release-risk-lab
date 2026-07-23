@@ -5,8 +5,10 @@ const {
   assessEvidenceReadiness,
   compareResponses,
   createPopulation,
+  populationFingerprint,
   runEnsemble,
   runSimulation,
+  runSimulationTrace,
   validateScenario,
 } = require('../src/model.js')
 
@@ -62,6 +64,16 @@ test('createPopulation is reproducible for the same seed and changes with anothe
 
   assert.deepEqual(first, replay)
   assert.notDeepEqual(first, variant)
+})
+
+test('population fingerprint changes when a visual identity trait changes', () => {
+  const population = createPopulation({ size: 125, seed: 11 })
+  const tampered = population.map((agent, index) => (
+    index === 0 ? { ...agent, networkActivity: agent.networkActivity + 0.01 } : agent
+  ))
+
+  assert.match(populationFingerprint(population), /^fnv1a32:[0-9a-f]{8}$/)
+  assert.notEqual(populationFingerprint(population), populationFingerprint(tampered))
 })
 
 test('createPopulation rejects undersized and non-integer populations', () => {
@@ -121,6 +133,53 @@ test('runSimulation produces a 42-day trace and multi-level breakdown', () => {
   assert.ok(result.peakRisk >= result.finalRisk)
   assert.ok(result.topDrivers.length >= 3)
   assert.equal(result.claimType, 'scenario-index')
+  assert.equal(Object.hasOwn(result, 'agentTimeline'), false)
+})
+
+test('runSimulationTrace preserves all 42 daily states for every agent', () => {
+  const population = createPopulation({ size: 125, seed: 7 })
+  const result = runSimulationTrace({
+    scenario: rewardScenario,
+    response: correctiveResponse,
+    population,
+    seed: 19,
+  })
+
+  assert.equal(result.traceVersion, 'agent-trace/1.0')
+  assert.equal(result.simulationSeed, 19)
+  assert.match(result.populationFingerprint, /^fnv1a32:[0-9a-f]{8}$/)
+  assert.equal(result.agentTimeline.length, 42)
+  assert.ok(result.agentTimeline.every((frame) => frame.agents.length === 125))
+  assert.deepEqual(
+    result.agentTimeline[0].agents.map((agent) => agent.id),
+    population.map((agent) => agent.id),
+  )
+
+  for (const frame of result.agentTimeline) {
+    for (const agent of frame.agents) {
+      for (const key of ['risk', 'pressure', 'networkPressure', 'responseBuffer']) {
+        assert.ok(agent[key] >= 0 && agent[key] <= 1, `${key} must be normalized`)
+      }
+    }
+  }
+})
+
+test('runSimulationTrace is deterministic and agrees with aggregate risk', () => {
+  const population = createPopulation({ size: 125, seed: 17 })
+  const options = {
+    scenario: rewardScenario,
+    response: correctiveResponse,
+    population,
+    seed: 23,
+  }
+  const first = runSimulationTrace(options)
+  const replay = runSimulationTrace(options)
+
+  assert.deepEqual(first, replay)
+  first.agentTimeline.forEach((frame, index) => {
+    const meanRisk = frame.agents.reduce((sum, agent) => sum + agent.risk, 0) / frame.agents.length
+    assert.ok(Math.abs(first.timeline[index].risk - meanRisk * 100) <= 0.02)
+  })
 })
 
 test('a fast corrective response lowers peak and final risk relative to silence', () => {
