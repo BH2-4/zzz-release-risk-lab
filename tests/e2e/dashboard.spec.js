@@ -107,6 +107,7 @@ test('mobile dashboard has no horizontal overflow', async ({ page }, testInfo) =
 
 test('pitch deck fits target viewports and supports keyboard navigation', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'viewport matrix runs once')
+  const pitchPath = '/roadshow/beta0.1/'
   const viewports = [
     { name: 'wide', width: 1920, height: 1080 },
     { name: 'desktop', width: 1280, height: 720 },
@@ -117,7 +118,7 @@ test('pitch deck fits target viewports and supports keyboard navigation', async 
 
   for (const viewport of viewports) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height })
-    await page.goto('/pitch.html')
+    await page.goto(pitchPath)
     const overflow = await page.locator('.slide').evaluateAll((slides) => slides.map((slide, index) => ({
       index,
       horizontal: slide.scrollWidth - slide.clientWidth,
@@ -127,7 +128,10 @@ test('pitch deck fits target viewports and supports keyboard navigation', async 
   }
 
   await page.setViewportSize({ width: 1280, height: 720 })
-  await page.goto('/pitch.html')
+  await page.goto(pitchPath)
+  await expect(page).toHaveTitle(/路演 Beta 0\.1/)
+  await expect(page.locator('.brand img')).toHaveJSProperty('complete', true)
+  await expect(page.locator('.demo-link').first()).toHaveAttribute('href', '../../index.html')
   await expect(page.getByText('1 / 10', { exact: true })).toBeVisible()
   await expect(page.locator('#slide-1')).toHaveClass(/is-active/)
   await expect(page.locator('#slide-1 [data-reveal]').last()).toHaveCSS('opacity', '1')
@@ -143,7 +147,7 @@ test('pitch deck fits target viewports and supports keyboard navigation', async 
   await page.screenshot({ path: 'artifacts/screenshots/pitch-final.png' })
 
   await page.setViewportSize({ width: 667, height: 375 })
-  await page.goto('/pitch.html#slide-8')
+  await page.goto(`${pitchPath}#slide-8`)
   await expect(page.locator('#slide-8')).toHaveClass(/is-active/)
   await expect(page.locator('#slide-8 [data-reveal]').last()).toHaveCSS('opacity', '1')
   await page.screenshot({ path: 'artifacts/screenshots/pitch-landscape-phone.png' })
