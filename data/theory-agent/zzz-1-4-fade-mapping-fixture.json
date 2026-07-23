@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "theory-mapping/1.0",
+  "extractionRefs": [
+    "zzz-en-x-1-4-known-issues-2024-12-18",
+    "gamersky-zzz-1-4-fade-2024-12-18",
+    "hoyoverse-zzz-3-1-benefits-2026-07-17"
+  ],
+  "mappings": [
+    {
+      "id": "mapping-framing-display-versus-access",
+      "theoryId": "theory-framing",
+      "claimProposalIds": [
+        "proposal-fade-adjustment-fix",
+        "proposal-player-ownership-frame",
+        "proposal-3-1-lucy-outfit-official"
+      ],
+      "constructs": ["problem-definition", "causal-attribution", "moral-evaluation"],
+      "mechanism": "The same visible behavior can be defined as a display defect or as restricted access to already obtained character content; the 3.1 outfit is only a product-context anchor for a synthetic transfer.",
+      "suggestedParameterPaths": ["scenario.triggers.social", "scenario.triggers.internet"],
+      "confidence": 0.78,
+      "limitations": [
+        "The media quote proves the frame appeared publicly, not that players accepted it or that it was prevalent.",
+        "No evidence says the Version 3.1 outfit will have a fade issue."
+      ]
+    },
+    {
+      "id": "mapping-scct-correction-boundary",
+      "theoryId": "theory-scct",
+      "claimProposalIds": ["proposal-fade-adjustment-fix", "proposal-multi-issue-compensation"],
+      "constructs": ["responsibility-attribution", "response-fit"],
+      "mechanism": "The official response distinguishes a correctable display anomaly from the underlying adjustment and combines correction, apology, and bounded compensation.",
+      "suggestedParameterPaths": [
+        "scenario.controllability",
+        "strategies.candidate.delayDays",
+        "strategies.candidate.transparency",
+        "strategies.candidate.restitution",
+        "strategies.candidate.correctiveAction"
+      ],
+      "confidence": 0.83,
+      "limitations": [
+        "SCCT supplies no ZZZ-specific effect size.",
+        "The official English notice does not establish the exact start time of the first player complaints."
+      ]
+    },
+    {
+      "id": "mapping-relative-deprivation-owned-content",
+      "theoryId": "theory-relative-deprivation",
+      "claimProposalIds": ["proposal-player-ownership-frame"],
+      "constructs": ["comparison-reference", "perceived-disadvantage", "fairness-gap"],
+      "mechanism": "The quoted player compares having paid for or unlocked a character with being unable to view that character from all angles, creating an explicit ownership-related comparison frame.",
+      "suggestedParameterPaths": ["scenario.triggers.economic", "scenario.triggers.social"],
+      "confidence": 0.66,
+      "limitations": [
+        "A single reported quote cannot establish affect intensity, group-level deprivation, or prevalence."
+      ]
+    },
+    {
+      "id": "mapping-image-repair-correction",
+      "theoryId": "theory-image-repair",
+      "claimProposalIds": ["proposal-fade-adjustment-fix", "proposal-multi-issue-compensation"],
+      "constructs": ["corrective-action", "mortification"],
+      "mechanism": "The official notice uses corrective action and an apology, while the compensation is scoped to a notice containing four issues.",
+      "suggestedParameterPaths": [
+        "strategies.candidate.transparency",
+        "strategies.candidate.restitution",
+        "strategies.candidate.correctiveAction"
+      ],
+      "confidence": 0.81,
+      "limitations": [
+        "Classifying response discourse does not show that the response was effective."
+      ]
+    }
+  ],
+  "unmappedClaimIds": [],
+  "limitations": [
+    "This checked-in mapping is a deterministic demo fixture, not a real model output.",
+    "The historical case supports mechanism plausibility and response timing only, not a Version 3.1 crisis probability."
+  ]
+}

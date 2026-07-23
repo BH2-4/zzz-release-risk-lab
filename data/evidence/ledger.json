@@ -1,0 +1,677 @@
+{
+  "schemaVersion": "evidence-ledger/1.0",
+  "ledgerId": "programE-public-evidence-2026-07-24",
+  "updatedAt": "2026-07-24T01:47:08+08:00",
+  "sources": [
+    {
+      "id": "gamesradar-zzz-tv-mode-2024-09-24",
+      "kind": "professional-media",
+      "grade": "B",
+      "title": "Zenless Zone Zero is toning down its divisive \"TV mode\" after \"a lot of negative feedback,\" which means I can finally try this painfully gorgeous action RPG",
+      "publisher": "GamesRadar+",
+      "url": "https://www.gamesradar.com/games/action-rpg/zenless-zone-zero-is-toning-down-its-divisive-tv-mode-after-a-lot-of-negative-feedback-which-means-i-can-finally-try-this-painfully-gorgeous-action-rpg/",
+      "publishedAt": "2024-09-24",
+      "accessedAt": "2026-07-23T15:20:00+08:00",
+      "language": "en",
+      "snapshotPath": "data/evidence/snapshots/gamesradar-zzz-tv-mode-2024-09-24.md",
+      "verification": {
+        "status": "direct",
+        "method": "publisher-html-metadata-and-body",
+        "checkedAt": "2026-07-23T15:20:00+08:00"
+      }
+    },
+    {
+      "id": "eurogamer-zzz-pacing-2023-12-16",
+      "kind": "professional-media",
+      "grade": "B",
+      "title": "Zenless Zone Zero would be brilliant if it didn't keep wasting your time",
+      "publisher": "Eurogamer",
+      "url": "https://www.eurogamer.net/zenless-zone-zero-would-be-brilliant-if-it-didnt-keep-wasting-your-time",
+      "publishedAt": "2023-12-16",
+      "accessedAt": "2026-07-23T15:25:00+08:00",
+      "language": "en",
+      "snapshotPath": "data/evidence/snapshots/eurogamer-zzz-pacing-2023-12-16.md",
+      "verification": {
+        "status": "direct",
+        "method": "publisher-page-and-bocha-content-index",
+        "checkedAt": "2026-07-23T15:25:00+08:00"
+      }
+    },
+    {
+      "id": "hoyolab-zzz-1-4-update-2024-12-17",
+      "kind": "official",
+      "grade": "C",
+      "title": "Version 1.4 \"A Storm of Falling Stars\" Update Details",
+      "publisher": "HoYoLAB / Zenless Zone Zero",
+      "url": "https://www.hoyolab.com/article/35654082",
+      "publishedAt": "2024-12-17",
+      "accessedAt": "2026-07-23T15:10:00+08:00",
+      "language": "en",
+      "verification": {
+        "status": "candidate",
+        "method": "official-url-discovered-but-region-blocked-during-current-audit",
+        "checkedAt": "2026-07-23T15:10:00+08:00"
+      }
+    },
+    {
+      "id": "realsound-zzz-1-4-ja-2024-12-22",
+      "kind": "professional-media",
+      "grade": "C",
+      "title": "『ゼンレスゾーンゼロ』音楽プロデューサー独占インタビュー “元祖シティポップ”は「日本での仕事」がインスピレーションに",
+      "publisher": "Real Sound Tech",
+      "url": "https://realsound.jp/tech/2024/12/post-1878217.html",
+      "publishedAt": "2024-12-22",
+      "accessedAt": "2026-07-23T15:45:00+08:00",
+      "language": "ja",
+      "verification": {
+        "status": "candidate",
+        "method": "bocha-index-only-direct-page-not-yet-extracted",
+        "checkedAt": "2026-07-23T15:45:00+08:00"
+      }
+    },
+    {
+      "id": "ithome-genshin-rollback-2024-07-18",
+      "kind": "professional-media",
+      "grade": "B",
+      "title": "米哈游《原神》道歉：角色技能问题修复后回退、补偿 1600 原石",
+      "publisher": "IT之家",
+      "url": "https://www.ithome.com/0/782/509.htm",
+      "publishedAt": "2024-07-18",
+      "accessedAt": "2026-07-23T10:00:00+08:00",
+      "language": "zh-CN",
+      "verification": {
+        "status": "direct",
+        "method": "publisher-page",
+        "checkedAt": "2026-07-23T10:00:00+08:00"
+      }
+    },
+    {
+      "id": "zzz-en-x-1-4-known-issues-2024-12-18",
+      "kind": "official",
+      "grade": "A",
+      "title": "Version 1.4 Known Issues & Fixes",
+      "publisher": "Zenless Zone Zero / @ZZZ_EN",
+      "url": "https://x.com/ZZZ_EN/status/1869404766096515126",
+      "publishedAt": "2024-12-18T15:30:02Z",
+      "accessedAt": "2026-07-24T01:36:36+08:00",
+      "language": "en",
+      "snapshotPath": "data/evidence/snapshots/zzz-en-x-1-4-known-issues-2024-12-18.md",
+      "verification": {
+        "status": "direct",
+        "method": "canonical-official-x-post-cross-checked-via-two-public-mirror-apis",
+        "checkedAt": "2026-07-24T01:36:36+08:00"
+      }
+    },
+    {
+      "id": "gamersky-zzz-1-4-fade-2024-12-18",
+      "kind": "professional-media",
+      "grade": "B",
+      "title": "《绝区零》深夜发布1.4版本部分已知问题修复说明",
+      "publisher": "游民星空",
+      "url": "https://www.gamersky.com/news/202412/1861345.shtml",
+      "publishedAt": "2024-12-18T23:19:37+08:00",
+      "accessedAt": "2026-07-24T01:36:36+08:00",
+      "language": "zh-CN",
+      "snapshotPath": "data/evidence/snapshots/gamersky-zzz-1-4-fade-2024-12-18.md",
+      "verification": {
+        "status": "direct",
+        "method": "publisher-html-metadata-and-body",
+        "checkedAt": "2026-07-24T01:36:36+08:00"
+      }
+    },
+    {
+      "id": "miyoushe-zzz-3-1-discussion-2026-07-17",
+      "kind": "official",
+      "grade": "A",
+      "title": "《绝区零》3.1版本「漫长的告别」前瞻讨论活动开启",
+      "publisher": "米游社 / 米仔",
+      "url": "https://www.miyoushe.com/zzz/article/76753998",
+      "publishedAt": "2026-07-17T19:30:09+08:00",
+      "accessedAt": "2026-07-24T01:36:36+08:00",
+      "language": "zh-CN",
+      "snapshotPath": "data/evidence/snapshots/miyoushe-zzz-3-1-preview-2026-07-17.md",
+      "verification": {
+        "status": "direct",
+        "method": "miyoushe-public-api-certified-official-account",
+        "checkedAt": "2026-07-24T01:36:36+08:00"
+      }
+    },
+    {
+      "id": "miyoushe-zzz-3-1-program-2026-07-17",
+      "kind": "official",
+      "grade": "A",
+      "title": "3.1版本「漫长的告别」前瞻特别节目",
+      "publisher": "米游社 / 绝区零官方账号",
+      "url": "https://www.miyoushe.com/zzz/article/76756496",
+      "publishedAt": "2026-07-17T20:45:11+08:00",
+      "accessedAt": "2026-07-24T01:36:36+08:00",
+      "language": "zh-CN",
+      "snapshotPath": "data/evidence/snapshots/miyoushe-zzz-3-1-preview-2026-07-17.md",
+      "verification": {
+        "status": "direct",
+        "method": "miyoushe-public-api-certified-official-account",
+        "checkedAt": "2026-07-24T01:36:36+08:00"
+      }
+    },
+    {
+      "id": "hoyoverse-zzz-3-1-benefits-2026-07-17",
+      "kind": "official",
+      "grade": "A",
+      "title": "3.1版本「绝区零二周年庆典」福利速递",
+      "publisher": "Zenless Zone Zero Official Site / HoYoverse",
+      "url": "https://zenless.hoyoverse.com/zh-cn/news/165249",
+      "publishedAt": "2026-07-17T20:25:00+08:00",
+      "accessedAt": "2026-07-24T01:46:00+08:00",
+      "language": "zh-CN",
+      "snapshotPath": "data/evidence/snapshots/hoyoverse-zzz-3-1-benefits-2026-07-17.md",
+      "verification": {
+        "status": "direct",
+        "method": "canonical-page-and-official-public-content-api",
+        "checkedAt": "2026-07-24T01:46:00+08:00"
+      }
+    },
+    {
+      "id": "ithome-zzz-3-1-preview-2026-07-17",
+      "kind": "professional-media",
+      "grade": "B",
+      "title": "米哈游《绝区零》宣布联动《崩坏：星穹铁道》，3.1 版本 7 月 29 日上线",
+      "publisher": "IT之家",
+      "url": "https://www.ithome.com/0/978/293.htm",
+      "publishedAt": "2026-07-17T20:42:30+08:00",
+      "accessedAt": "2026-07-24T01:36:36+08:00",
+      "language": "zh-CN",
+      "snapshotPath": "data/evidence/snapshots/ithome-zzz-3-1-lucy-outfit-2026-07-17.md",
+      "verification": {
+        "status": "direct",
+        "method": "publisher-html-metadata-and-body",
+        "checkedAt": "2026-07-24T01:36:36+08:00"
+      }
+    },
+    {
+      "id": "doi-granovetter-1978",
+      "kind": "academic",
+      "grade": "A",
+      "title": "Threshold Models of Collective Behavior",
+      "publisher": "American Journal of Sociology / University of Chicago Press",
+      "url": "https://doi.org/10.1086/226707",
+      "publishedAt": "1978-05",
+      "accessedAt": "2026-07-23T10:00:00+08:00",
+      "language": "en",
+      "verification": {
+        "status": "metadata",
+        "method": "crossref-doi-metadata",
+        "checkedAt": "2026-07-23T10:00:00+08:00"
+      }
+    },
+    {
+      "id": "doi-entman-1993",
+      "kind": "academic",
+      "grade": "A",
+      "title": "Framing: Toward Clarification of a Fractured Paradigm",
+      "publisher": "Journal of Communication / Oxford University Press",
+      "url": "https://doi.org/10.1111/j.1460-2466.1993.tb01304.x",
+      "publishedAt": "1993-12-01",
+      "accessedAt": "2026-07-23T10:00:00+08:00",
+      "language": "en",
+      "verification": {
+        "status": "metadata",
+        "method": "crossref-doi-metadata",
+        "checkedAt": "2026-07-23T10:00:00+08:00"
+      }
+    },
+    {
+      "id": "doi-coombs-2007",
+      "kind": "academic",
+      "grade": "A",
+      "title": "Protecting Organization Reputations During a Crisis: The Development and Application of Situational Crisis Communication Theory",
+      "publisher": "Corporate Reputation Review / Springer",
+      "url": "https://doi.org/10.1057/palgrave.crr.1550049",
+      "publishedAt": "2007-09",
+      "accessedAt": "2026-07-23T10:00:00+08:00",
+      "language": "en",
+      "verification": {
+        "status": "metadata",
+        "method": "crossref-doi-metadata",
+        "checkedAt": "2026-07-23T10:00:00+08:00"
+      }
+    },
+    {
+      "id": "doi-bennett-segerberg-2012",
+      "kind": "academic",
+      "grade": "A",
+      "title": "The Logic of Connective Action",
+      "publisher": "Information, Communication & Society / Taylor & Francis",
+      "url": "https://doi.org/10.1080/1369118X.2012.670661",
+      "publishedAt": "2012-06",
+      "accessedAt": "2026-07-23T10:00:00+08:00",
+      "language": "en",
+      "verification": {
+        "status": "metadata",
+        "method": "crossref-doi-metadata",
+        "checkedAt": "2026-07-23T10:00:00+08:00"
+      }
+    },
+    {
+      "id": "doi-smith-pettigrew-2011",
+      "kind": "academic",
+      "grade": "A",
+      "title": "Relative Deprivation",
+      "publisher": "Personality and Social Psychology Review / SAGE",
+      "url": "https://doi.org/10.1177/1088868311430825",
+      "publishedAt": "2011-12-22",
+      "accessedAt": "2026-07-23T10:00:00+08:00",
+      "language": "en",
+      "verification": {
+        "status": "metadata",
+        "method": "crossref-doi-metadata",
+        "checkedAt": "2026-07-23T10:00:00+08:00"
+      }
+    },
+    {
+      "id": "doi-mitchell-agle-wood-1997",
+      "kind": "academic",
+      "grade": "A",
+      "title": "Toward a Theory of Stakeholder Identification and Salience: Defining the Principle of Who and What Really Counts",
+      "publisher": "The Academy of Management Review",
+      "url": "https://doi.org/10.2307/259247",
+      "publishedAt": "1997-10",
+      "accessedAt": "2026-07-23T10:00:00+08:00",
+      "language": "en",
+      "verification": {
+        "status": "metadata",
+        "method": "crossref-doi-metadata",
+        "checkedAt": "2026-07-23T10:00:00+08:00"
+      }
+    },
+    {
+      "id": "doi-kim-grunig-2011",
+      "kind": "academic",
+      "grade": "A",
+      "title": "Problem Solving and Communicative Action: A Situational Theory of Problem Solving",
+      "publisher": "Journal of Communication / Oxford University Press",
+      "url": "https://doi.org/10.1111/j.1460-2466.2010.01529.x",
+      "publishedAt": "2011-02-01",
+      "accessedAt": "2026-07-24T01:22:45+08:00",
+      "language": "en",
+      "verification": {
+        "status": "metadata",
+        "method": "crossref-doi-metadata",
+        "checkedAt": "2026-07-24T01:22:45+08:00"
+      }
+    },
+    {
+      "id": "doi-austin-liu-jin-2012",
+      "kind": "academic",
+      "grade": "A",
+      "title": "How Audiences Seek Out Crisis Information: Exploring the Social-Mediated Crisis Communication Model",
+      "publisher": "Journal of Applied Communication Research / Taylor & Francis",
+      "url": "https://doi.org/10.1080/00909882.2012.654498",
+      "publishedAt": "2012-02-09",
+      "accessedAt": "2026-07-24T01:22:45+08:00",
+      "language": "en",
+      "verification": {
+        "status": "metadata",
+        "method": "crossref-doi-metadata",
+        "checkedAt": "2026-07-24T01:22:45+08:00"
+      }
+    },
+    {
+      "id": "doi-kasperson-et-al-1988",
+      "kind": "academic",
+      "grade": "A",
+      "title": "The Social Amplification of Risk: A Conceptual Framework",
+      "publisher": "Risk Analysis / Wiley",
+      "url": "https://doi.org/10.1111/j.1539-6924.1988.tb01168.x",
+      "publishedAt": "1988-06",
+      "accessedAt": "2026-07-24T01:22:45+08:00",
+      "language": "en",
+      "verification": {
+        "status": "metadata",
+        "method": "crossref-doi-metadata-and-publisher-abstract",
+        "checkedAt": "2026-07-24T01:22:45+08:00"
+      }
+    },
+    {
+      "id": "doi-noelle-neumann-1974",
+      "kind": "academic",
+      "grade": "A",
+      "title": "The Spiral of Silence a Theory of Public Opinion",
+      "publisher": "Journal of Communication / Oxford University Press",
+      "url": "https://doi.org/10.1111/j.1460-2466.1974.tb00367.x",
+      "publishedAt": "1974-06-01",
+      "accessedAt": "2026-07-24T01:22:45+08:00",
+      "language": "en",
+      "verification": {
+        "status": "metadata",
+        "method": "crossref-doi-metadata",
+        "checkedAt": "2026-07-24T01:22:45+08:00"
+      }
+    },
+    {
+      "id": "doi-benoit-1997",
+      "kind": "academic",
+      "grade": "A",
+      "title": "Image Repair Discourse and Crisis Communication",
+      "publisher": "Public Relations Review / Elsevier",
+      "url": "https://doi.org/10.1016/S0363-8111(97)90023-0",
+      "publishedAt": "1997-06",
+      "accessedAt": "2026-07-24T01:22:45+08:00",
+      "language": "en",
+      "verification": {
+        "status": "metadata",
+        "method": "crossref-doi-metadata",
+        "checkedAt": "2026-07-24T01:22:45+08:00"
+      }
+    }
+  ],
+  "claims": [
+    {
+      "id": "claim-zzz-tv-mode-preview-pacing",
+      "claimType": "reported-fact",
+      "evidenceStatus": "reported",
+      "text": "Eurogamer's second-beta preview attributed major pacing problems primarily to the TV mode.",
+      "language": "en",
+      "sourceRefs": [
+        {
+          "sourceId": "eurogamer-zzz-pacing-2023-12-16",
+          "locator": "article title and opening analysis"
+        }
+      ],
+      "allowedUses": ["historical-analogy", "issue-framing"]
+    },
+    {
+      "id": "claim-zzz-tv-mode-developer-response",
+      "claimType": "reported-fact",
+      "evidenceStatus": "reported",
+      "text": "GamesRadar reported that the development team acknowledged release problems with TV Mode after negative feedback and described a stage-based direction for later main-story content.",
+      "language": "en",
+      "sourceRefs": [
+        {
+          "sourceId": "gamesradar-zzz-tv-mode-2024-09-24",
+          "locator": "headline, deck, and developer statement section"
+        }
+      ],
+      "allowedUses": ["historical-analogy", "response-design", "issue-framing"]
+    },
+    {
+      "id": "claim-zzz-1-4-official-update-lead",
+      "claimType": "fact",
+      "evidenceStatus": "candidate",
+      "text": "The official HoYoLAB page is a candidate primary source for the Version 1.4 changes, but it was region-blocked during the current audit.",
+      "language": "en",
+      "sourceRefs": [
+        {
+          "sourceId": "hoyolab-zzz-1-4-update-2024-12-17",
+          "locator": "official article URL and title"
+        }
+      ],
+      "allowedUses": ["research-lead"]
+    },
+    {
+      "id": "claim-zzz-1-4-ja-context-lead",
+      "claimType": "reported-fact",
+      "evidenceStatus": "candidate",
+      "text": "日本語記事はVer.1.4をローンチ以来最大規模のアップデートとして紹介しているが、本文の直接抽出は未完了である。",
+      "language": "ja",
+      "sourceRefs": [
+        {
+          "sourceId": "realsound-zzz-1-4-ja-2024-12-22",
+          "locator": "Bocha indexed summary"
+        }
+      ],
+      "allowedUses": ["research-lead"]
+    },
+    {
+      "id": "claim-genshin-mechanics-rollback-zh",
+      "claimType": "reported-fact",
+      "evidenceStatus": "reported",
+      "text": "IT之家报道《原神》在角色技能问题修复后回退调整、致歉并补偿1600原石。",
+      "language": "zh-CN",
+      "sourceRefs": [
+        {
+          "sourceId": "ithome-genshin-rollback-2024-07-18",
+          "locator": "标题与正文前段"
+        }
+      ],
+      "allowedUses": ["historical-analogy", "response-design"]
+    },
+    {
+      "id": "claim-zzz-1-4-fade-adjustment-fix",
+      "claimType": "fact",
+      "evidenceStatus": "verified",
+      "text": "The official Version 1.4 notice states that an adjustment made Agents appear faded from specific viewing angles and that an issue causing the fading effect to display incorrectly under some circumstances was fixed.",
+      "language": "en",
+      "sourceRefs": [
+        {
+          "sourceId": "zzz-en-x-1-4-known-issues-2024-12-18",
+          "locator": "second bullet of Version 1.4 Known Issues & Fixes"
+        }
+      ],
+      "allowedUses": ["historical-mechanism", "issue-framing", "response-design"]
+    },
+    {
+      "id": "claim-zzz-1-4-multi-issue-compensation",
+      "claimType": "fact",
+      "evidenceStatus": "verified",
+      "text": "The same official notice apologized for four listed Version 1.4 issues and offered 300 Polychrome as compensation for the notice as a whole.",
+      "language": "en",
+      "sourceRefs": [
+        {
+          "sourceId": "zzz-en-x-1-4-known-issues-2024-12-18",
+          "locator": "four issue bullets, apology, and Compensation Details"
+        }
+      ],
+      "allowedUses": ["historical-mechanism", "response-design"]
+    },
+    {
+      "id": "claim-zzz-1-4-player-ownership-frame",
+      "claimType": "reported-fact",
+      "evidenceStatus": "reported",
+      "text": "Gamersky reported that some fans objected to the specific-angle fade and quoted an overseas player framing it as being unable to fully view characters they had paid to obtain or unlock.",
+      "language": "zh-CN",
+      "sourceRefs": [
+        {
+          "sourceId": "gamersky-zzz-1-4-fade-2024-12-18",
+          "locator": "opening paragraph and quoted overseas-player statement"
+        }
+      ],
+      "allowedUses": ["historical-mechanism", "issue-framing"]
+    },
+    {
+      "id": "claim-zzz-3-1-release-date",
+      "claimType": "fact",
+      "evidenceStatus": "verified",
+      "text": "The official preview discussion post states that Zenless Zone Zero Version 3.1 will launch on 2026-07-29.",
+      "language": "zh-CN",
+      "sourceRefs": [
+        {
+          "sourceId": "miyoushe-zzz-3-1-discussion-2026-07-17",
+          "locator": "first text paragraph"
+        }
+      ],
+      "allowedUses": ["version-context", "scenario-timing"]
+    },
+    {
+      "id": "claim-zzz-3-1-development-boundary",
+      "claimType": "fact",
+      "evidenceStatus": "verified",
+      "text": "The official Version 3.1 preview program states that displayed visuals and rewards were still under development and that the released version controls the actual content.",
+      "language": "zh-CN",
+      "sourceRefs": [
+        {
+          "sourceId": "miyoushe-zzz-3-1-program-2026-07-17",
+          "locator": "development-content disclaimer"
+        }
+      ],
+      "allowedUses": ["version-context", "research-boundary"]
+    },
+    {
+      "id": "claim-zzz-3-1-lucy-outfit-official",
+      "claimType": "fact",
+      "evidenceStatus": "verified",
+      "text": "The official Version 3.1 benefits page states that participating in the event 'Summer Waves Arrive' provides Lucy's swimsuit outfit 'Princess Holiday' for free.",
+      "language": "zh-CN",
+      "sourceRefs": [
+        {
+          "sourceId": "hoyoverse-zzz-3-1-benefits-2026-07-17",
+          "locator": "official content API sContent, fourth benefit bullet"
+        }
+      ],
+      "allowedUses": ["version-context", "synthetic-counterfactual-anchor"]
+    },
+    {
+      "id": "claim-theory-threshold",
+      "claimType": "academic-construct",
+      "evidenceStatus": "verified",
+      "text": "Threshold models represent heterogeneous participation thresholds in collective behavior.",
+      "language": "en",
+      "sourceRefs": [
+        {
+          "sourceId": "doi-granovetter-1978",
+          "locator": "DOI metadata and article construct"
+        }
+      ],
+      "allowedUses": ["theory-definition", "agent-mechanism"]
+    },
+    {
+      "id": "claim-theory-framing",
+      "claimType": "academic-construct",
+      "evidenceStatus": "verified",
+      "text": "Framing analysis distinguishes problem definition, causal interpretation, moral evaluation, and treatment recommendation.",
+      "language": "en",
+      "sourceRefs": [
+        {
+          "sourceId": "doi-entman-1993",
+          "locator": "DOI metadata and article construct"
+        }
+      ],
+      "allowedUses": ["theory-definition", "text-labeling", "scenario-mapping"]
+    },
+    {
+      "id": "claim-theory-scct",
+      "claimType": "academic-construct",
+      "evidenceStatus": "verified",
+      "text": "Situational Crisis Communication Theory links crisis responsibility and history to response selection and reputational threat.",
+      "language": "en",
+      "sourceRefs": [
+        {
+          "sourceId": "doi-coombs-2007",
+          "locator": "DOI metadata and article construct"
+        }
+      ],
+      "allowedUses": ["theory-definition", "response-design", "scenario-mapping"]
+    },
+    {
+      "id": "claim-theory-connective-action",
+      "claimType": "academic-construct",
+      "evidenceStatus": "verified",
+      "text": "Connective action explains how personalized communication can coordinate participation through digitally mediated networks.",
+      "language": "en",
+      "sourceRefs": [
+        {
+          "sourceId": "doi-bennett-segerberg-2012",
+          "locator": "DOI metadata and article construct"
+        }
+      ],
+      "allowedUses": ["theory-definition", "agent-mechanism", "scenario-mapping"]
+    },
+    {
+      "id": "claim-theory-relative-deprivation",
+      "claimType": "academic-construct",
+      "evidenceStatus": "verified",
+      "text": "Relative deprivation concerns perceived disadvantage produced through comparison rather than absolute outcome alone.",
+      "language": "en",
+      "sourceRefs": [
+        {
+          "sourceId": "doi-smith-pettigrew-2011",
+          "locator": "DOI metadata and review construct"
+        }
+      ],
+      "allowedUses": ["theory-definition", "scenario-mapping"]
+    },
+    {
+      "id": "claim-theory-stakeholder-salience",
+      "claimType": "academic-construct",
+      "evidenceStatus": "verified",
+      "text": "Stakeholder salience separates power, legitimacy, and urgency when identifying who and what receives attention.",
+      "language": "en",
+      "sourceRefs": [
+        {
+          "sourceId": "doi-mitchell-agle-wood-1997",
+          "locator": "DOI metadata and article construct"
+        }
+      ],
+      "allowedUses": ["theory-definition", "stakeholder-mapping"]
+    },
+    {
+      "id": "claim-theory-stops",
+      "claimType": "academic-construct",
+      "evidenceStatus": "verified",
+      "text": "The Situational Theory of Problem Solving distinguishes problem, constraint, and involvement recognition and links them to communicative action in problem solving.",
+      "language": "en",
+      "sourceRefs": [
+        {
+          "sourceId": "doi-kim-grunig-2011",
+          "locator": "DOI metadata and article construct"
+        }
+      ],
+      "allowedUses": ["theory-definition", "agent-appraisal", "scenario-mapping"]
+    },
+    {
+      "id": "claim-theory-smcc",
+      "claimType": "academic-construct",
+      "evidenceStatus": "verified",
+      "text": "The Social-Mediated Crisis Communication model distinguishes crisis information sources, forms, and media-use motivations when audiences seek and share information.",
+      "language": "en",
+      "sourceRefs": [
+        {
+          "sourceId": "doi-austin-liu-jin-2012",
+          "locator": "DOI metadata and article construct"
+        }
+      ],
+      "allowedUses": ["theory-definition", "channel-mechanism", "scenario-mapping"]
+    },
+    {
+      "id": "claim-theory-sarf",
+      "claimType": "academic-construct",
+      "evidenceStatus": "verified",
+      "text": "The Social Amplification of Risk Framework describes how risk signals can be amplified or attenuated through social and institutional stations and produce secondary impacts.",
+      "language": "en",
+      "sourceRefs": [
+        {
+          "sourceId": "doi-kasperson-et-al-1988",
+          "locator": "DOI metadata and publisher abstract"
+        }
+      ],
+      "allowedUses": ["theory-definition", "multi-level-propagation", "scenario-mapping"]
+    },
+    {
+      "id": "claim-theory-spiral-silence",
+      "claimType": "academic-construct",
+      "evidenceStatus": "verified",
+      "text": "Spiral of Silence theory separates perceived opinion climate and willingness to speak under anticipated social isolation.",
+      "language": "en",
+      "sourceRefs": [
+        {
+          "sourceId": "doi-noelle-neumann-1974",
+          "locator": "DOI metadata and article construct"
+        }
+      ],
+      "allowedUses": ["theory-definition", "public-expression-gate"]
+    },
+    {
+      "id": "claim-theory-image-repair",
+      "claimType": "academic-construct",
+      "evidenceStatus": "verified",
+      "text": "Image Repair Discourse classifies response strategies including denial, evasion of responsibility, reducing offensiveness, corrective action, and mortification.",
+      "language": "en",
+      "sourceRefs": [
+        {
+          "sourceId": "doi-benoit-1997",
+          "locator": "DOI metadata and article construct"
+        }
+      ],
+      "allowedUses": ["theory-definition", "response-ontology", "scenario-mapping"]
+    }
+  ]
+}

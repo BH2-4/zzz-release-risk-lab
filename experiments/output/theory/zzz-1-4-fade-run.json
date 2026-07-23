@@ -1,0 +1,390 @@
+{
+  "schemaVersion": "theory-agent-run/1.0",
+  "runId": "zzz-fade-20260723174818",
+  "state": "READY_FOR_COMPILATION",
+  "revision": 3,
+  "attempt": 1,
+  "maxAttempts": 2,
+  "inputDigests": {
+    "approvedExtractions": "sha256:324ab85864ddf0a3636ad4458e89f58070204339bf15a543e34fdf0ec57a167e",
+    "evidenceReview": "sha256:71a61e7ac5054174ae4acc7591191d8504db57d4cd7bd4396776f5345f1449f4",
+    "ledger": "sha256:f45201e1d9ac8432accfabe6938099ddb60aed857b3ddb38da168fe7752507cb",
+    "theoryCatalog": "sha256:9296e439d7a610302bc7e0ae19afc7c95697af99d4a85265cb2f73ca9b93f3e6"
+  },
+  "mapping": {
+    "schemaVersion": "theory-mapping/1.0",
+    "extractionRefs": [
+      "zzz-en-x-1-4-known-issues-2024-12-18",
+      "gamersky-zzz-1-4-fade-2024-12-18",
+      "hoyoverse-zzz-3-1-benefits-2026-07-17"
+    ],
+    "mappings": [
+      {
+        "id": "mapping-framing-display-versus-access",
+        "theoryId": "theory-framing",
+        "claimProposalIds": [
+          "proposal-fade-adjustment-fix",
+          "proposal-player-ownership-frame",
+          "proposal-3-1-lucy-outfit-official"
+        ],
+        "constructs": [
+          "problem-definition",
+          "causal-attribution",
+          "moral-evaluation"
+        ],
+        "mechanism": "The same visible behavior can be defined as a display defect or as restricted access to already obtained character content; the 3.1 outfit is only a product-context anchor for a synthetic transfer.",
+        "suggestedParameterPaths": [
+          "scenario.triggers.social",
+          "scenario.triggers.internet"
+        ],
+        "confidence": 0.78,
+        "limitations": [
+          "The media quote proves the frame appeared publicly, not that players accepted it or that it was prevalent.",
+          "No evidence says the Version 3.1 outfit will have a fade issue."
+        ]
+      },
+      {
+        "id": "mapping-scct-correction-boundary",
+        "theoryId": "theory-scct",
+        "claimProposalIds": [
+          "proposal-fade-adjustment-fix",
+          "proposal-multi-issue-compensation"
+        ],
+        "constructs": [
+          "responsibility-attribution",
+          "response-fit"
+        ],
+        "mechanism": "The official response distinguishes a correctable display anomaly from the underlying adjustment and combines correction, apology, and bounded compensation.",
+        "suggestedParameterPaths": [
+          "scenario.controllability",
+          "strategies.candidate.delayDays",
+          "strategies.candidate.transparency",
+          "strategies.candidate.restitution",
+          "strategies.candidate.correctiveAction"
+        ],
+        "confidence": 0.83,
+        "limitations": [
+          "SCCT supplies no ZZZ-specific effect size.",
+          "The official English notice does not establish the exact start time of the first player complaints."
+        ]
+      },
+      {
+        "id": "mapping-relative-deprivation-owned-content",
+        "theoryId": "theory-relative-deprivation",
+        "claimProposalIds": [
+          "proposal-player-ownership-frame"
+        ],
+        "constructs": [
+          "comparison-reference",
+          "perceived-disadvantage",
+          "fairness-gap"
+        ],
+        "mechanism": "The quoted player compares having paid for or unlocked a character with being unable to view that character from all angles, creating an explicit ownership-related comparison frame.",
+        "suggestedParameterPaths": [
+          "scenario.triggers.economic",
+          "scenario.triggers.social"
+        ],
+        "confidence": 0.66,
+        "limitations": [
+          "A single reported quote cannot establish affect intensity, group-level deprivation, or prevalence."
+        ]
+      },
+      {
+        "id": "mapping-image-repair-correction",
+        "theoryId": "theory-image-repair",
+        "claimProposalIds": [
+          "proposal-fade-adjustment-fix",
+          "proposal-multi-issue-compensation"
+        ],
+        "constructs": [
+          "corrective-action",
+          "mortification"
+        ],
+        "mechanism": "The official notice uses corrective action and an apology, while the compensation is scoped to a notice containing four issues.",
+        "suggestedParameterPaths": [
+          "strategies.candidate.transparency",
+          "strategies.candidate.restitution",
+          "strategies.candidate.correctiveAction"
+        ],
+        "confidence": 0.81,
+        "limitations": [
+          "Classifying response discourse does not show that the response was effective."
+        ]
+      }
+    ],
+    "unmappedClaimIds": [],
+    "limitations": [
+      "This checked-in mapping is a deterministic demo fixture, not a real model output.",
+      "The historical case supports mechanism plausibility and response timing only, not a Version 3.1 crisis probability."
+    ],
+    "reviewStatus": "pending-human-review",
+    "provenance": {
+      "mode": "deterministic-fixture",
+      "provider": "checked-in-fixture",
+      "model": null,
+      "requestId": null
+    },
+    "capabilities": {
+      "realModelUsed": false,
+      "closedTheoryCatalog": true,
+      "causalProof": false
+    }
+  },
+  "audit": {
+    "schemaVersion": "theory-audit/1.0",
+    "status": "pass",
+    "mappingDigest": "sha256:d00b36f299b44988a7e12f4ad0b8968061ef03bc7fb0c742fe1b3b4099228d86",
+    "mappedClaimProposalIds": [
+      "proposal-3-1-lucy-outfit-official",
+      "proposal-fade-adjustment-fix",
+      "proposal-multi-issue-compensation",
+      "proposal-player-ownership-frame"
+    ],
+    "unmappedClaimProposalIds": [],
+    "errors": [],
+    "warnings": [
+      "A valid theory mapping establishes a bounded mechanism hypothesis, not an effect size or causal proof."
+    ]
+  },
+  "checkpoint": null,
+  "review": {
+    "schemaVersion": "theory-review/1.0",
+    "targetDigest": "sha256:d00b36f299b44988a7e12f4ad0b8968061ef03bc7fb0c742fe1b3b4099228d86",
+    "decision": "approve",
+    "mappingDecisions": [
+      {
+        "mappingId": "mapping-framing-display-versus-access",
+        "decision": "approve",
+        "reasonCodes": [
+          "HUMAN_VERIFIED"
+        ]
+      },
+      {
+        "mappingId": "mapping-scct-correction-boundary",
+        "decision": "approve",
+        "reasonCodes": [
+          "HUMAN_VERIFIED"
+        ]
+      },
+      {
+        "mappingId": "mapping-relative-deprivation-owned-content",
+        "decision": "approve",
+        "reasonCodes": [
+          "HUMAN_VERIFIED"
+        ]
+      },
+      {
+        "mappingId": "mapping-image-repair-correction",
+        "decision": "approve",
+        "reasonCodes": [
+          "HUMAN_VERIFIED"
+        ]
+      }
+    ],
+    "reviewer": "manual-demo-curator",
+    "reviewedAt": "2026-07-23T17:48:40.906Z",
+    "feedback": [],
+    "id": "theory-review:sha256:a75d1c644277936b9500d0f7e8c7a42fa5330a757b2cdccd4f64295bb29617a3"
+  },
+  "reviews": [
+    {
+      "schemaVersion": "theory-review/1.0",
+      "targetDigest": "sha256:d00b36f299b44988a7e12f4ad0b8968061ef03bc7fb0c742fe1b3b4099228d86",
+      "decision": "approve",
+      "mappingDecisions": [
+        {
+          "mappingId": "mapping-framing-display-versus-access",
+          "decision": "approve",
+          "reasonCodes": [
+            "HUMAN_VERIFIED"
+          ]
+        },
+        {
+          "mappingId": "mapping-scct-correction-boundary",
+          "decision": "approve",
+          "reasonCodes": [
+            "HUMAN_VERIFIED"
+          ]
+        },
+        {
+          "mappingId": "mapping-relative-deprivation-owned-content",
+          "decision": "approve",
+          "reasonCodes": [
+            "HUMAN_VERIFIED"
+          ]
+        },
+        {
+          "mappingId": "mapping-image-repair-correction",
+          "decision": "approve",
+          "reasonCodes": [
+            "HUMAN_VERIFIED"
+          ]
+        }
+      ],
+      "reviewer": "manual-demo-curator",
+      "reviewedAt": "2026-07-23T17:48:40.906Z",
+      "feedback": [],
+      "id": "theory-review:sha256:a75d1c644277936b9500d0f7e8c7a42fa5330a757b2cdccd4f64295bb29617a3"
+    }
+  ],
+  "catalogGap": null,
+  "theorySystem": {
+    "schemaVersion": "theory-system/1.0",
+    "status": "approved",
+    "catalogDigest": "sha256:9296e439d7a610302bc7e0ae19afc7c95697af99d4a85265cb2f73ca9b93f3e6",
+    "ledgerDigest": "sha256:f45201e1d9ac8432accfabe6938099ddb60aed857b3ddb38da168fe7752507cb",
+    "evidenceReviewDigest": "sha256:71a61e7ac5054174ae4acc7591191d8504db57d4cd7bd4396776f5345f1449f4",
+    "mappingDigest": "sha256:d00b36f299b44988a7e12f4ad0b8968061ef03bc7fb0c742fe1b3b4099228d86",
+    "approvedMappings": [
+      {
+        "id": "mapping-framing-display-versus-access",
+        "theoryId": "theory-framing",
+        "claimIds": [
+          "claim-zzz-1-4-fade-adjustment-fix",
+          "claim-zzz-1-4-player-ownership-frame",
+          "claim-zzz-3-1-lucy-outfit-official"
+        ],
+        "constructs": [
+          "problem-definition",
+          "causal-attribution",
+          "moral-evaluation"
+        ],
+        "mechanism": "The same visible behavior can be defined as a display defect or as restricted access to already obtained character content; the 3.1 outfit is only a product-context anchor for a synthetic transfer.",
+        "parameterPaths": [
+          "scenario.triggers.social",
+          "scenario.triggers.internet"
+        ],
+        "limitations": [
+          "The media quote proves the frame appeared publicly, not that players accepted it or that it was prevalent.",
+          "No evidence says the Version 3.1 outfit will have a fade issue."
+        ]
+      },
+      {
+        "id": "mapping-scct-correction-boundary",
+        "theoryId": "theory-scct",
+        "claimIds": [
+          "claim-zzz-1-4-fade-adjustment-fix",
+          "claim-zzz-1-4-multi-issue-compensation"
+        ],
+        "constructs": [
+          "responsibility-attribution",
+          "response-fit"
+        ],
+        "mechanism": "The official response distinguishes a correctable display anomaly from the underlying adjustment and combines correction, apology, and bounded compensation.",
+        "parameterPaths": [
+          "scenario.controllability",
+          "strategies.candidate.delayDays",
+          "strategies.candidate.transparency",
+          "strategies.candidate.restitution",
+          "strategies.candidate.correctiveAction"
+        ],
+        "limitations": [
+          "SCCT supplies no ZZZ-specific effect size.",
+          "The official English notice does not establish the exact start time of the first player complaints."
+        ]
+      },
+      {
+        "id": "mapping-relative-deprivation-owned-content",
+        "theoryId": "theory-relative-deprivation",
+        "claimIds": [
+          "claim-zzz-1-4-player-ownership-frame"
+        ],
+        "constructs": [
+          "comparison-reference",
+          "perceived-disadvantage",
+          "fairness-gap"
+        ],
+        "mechanism": "The quoted player compares having paid for or unlocked a character with being unable to view that character from all angles, creating an explicit ownership-related comparison frame.",
+        "parameterPaths": [
+          "scenario.triggers.economic",
+          "scenario.triggers.social"
+        ],
+        "limitations": [
+          "A single reported quote cannot establish affect intensity, group-level deprivation, or prevalence."
+        ]
+      },
+      {
+        "id": "mapping-image-repair-correction",
+        "theoryId": "theory-image-repair",
+        "claimIds": [
+          "claim-zzz-1-4-fade-adjustment-fix",
+          "claim-zzz-1-4-multi-issue-compensation"
+        ],
+        "constructs": [
+          "corrective-action",
+          "mortification"
+        ],
+        "mechanism": "The official notice uses corrective action and an apology, while the compensation is scoped to a notice containing four issues.",
+        "parameterPaths": [
+          "strategies.candidate.transparency",
+          "strategies.candidate.restitution",
+          "strategies.candidate.correctiveAction"
+        ],
+        "limitations": [
+          "Classifying response discourse does not show that the response was effective."
+        ]
+      }
+    ],
+    "unmappedClaimIds": [],
+    "coverage": {
+      "mappedClaims": 4,
+      "totalClaims": 4,
+      "ratio": 1
+    },
+    "limitations": [
+      "This checked-in mapping is a deterministic demo fixture, not a real model output.",
+      "The historical case supports mechanism plausibility and response timing only, not a Version 3.1 crisis probability.",
+      "Theory matching supports a synthetic stress test; it is not causal proof or a real-world probability estimate."
+    ],
+    "review": {
+      "schemaVersion": "theory-review/1.0",
+      "targetDigest": "sha256:d00b36f299b44988a7e12f4ad0b8968061ef03bc7fb0c742fe1b3b4099228d86",
+      "decision": "approve",
+      "reviewer": "manual-demo-curator",
+      "reviewedAt": "2026-07-23T17:48:40.906Z"
+    },
+    "provenance": {
+      "mode": "deterministic-fixture",
+      "provider": "checked-in-fixture",
+      "model": null,
+      "requestId": null,
+      "realModelUsed": false
+    },
+    "id": "theory-system:sha256:5c22be0df832eacac9f41664c8905580f8f7d19223ce294d8be677631186f8f2"
+  },
+  "events": [
+    {
+      "revision": 1,
+      "state": "AWAITING_HUMAN",
+      "at": "2026-07-23T17:48:18.034Z",
+      "summary": "Deterministic audit passed; human theory review is required.",
+      "artifactDigests": [
+        "sha256:d00b36f299b44988a7e12f4ad0b8968061ef03bc7fb0c742fe1b3b4099228d86",
+        "sha256:9ef99acd1a60c088c81f044ea306b2c5f1f7bf448dd7a9ffa6a21142769f7ef2"
+      ]
+    },
+    {
+      "revision": 2,
+      "state": "APPROVED",
+      "at": "2026-07-23T17:48:40.906Z",
+      "summary": "Human review decision: approve.",
+      "artifactDigests": [
+        "sha256:5133bc03b264d7d2c063aa951934dfda5eb51220db8b9568a0dd07fd0e238203"
+      ]
+    },
+    {
+      "revision": 3,
+      "state": "READY_FOR_COMPILATION",
+      "at": "2026-07-23T17:48:46.563Z",
+      "summary": "Approved mapping finalized for scenario compilation.",
+      "artifactDigests": [
+        "sha256:0e35224b9bf15c983a0c816b3bf227443dfb7996d78bdccaf34b7e7ed2d8d89e"
+      ]
+    }
+  ],
+  "capabilities": {
+    "realModelUsed": false,
+    "humanApprovalRequired": true,
+    "autoCatalogExpansion": false
+  }
+}

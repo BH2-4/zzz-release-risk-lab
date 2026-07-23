@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "evidence-review/1.0",
+  "id": "zzz-1-4-fade-evidence-review-v1",
+  "extractionRefs": [
+    {
+      "sourceId": "zzz-en-x-1-4-known-issues-2024-12-18",
+      "digest": "sha256:dc8f11011a07acff63183cbdfb0b7e0ca91353189fb5f43b725ea103daf82b78"
+    },
+    {
+      "sourceId": "gamersky-zzz-1-4-fade-2024-12-18",
+      "digest": "sha256:ce9de8914956abe261205e12652722b54c98c0954d115548ab2204af3bfcb212"
+    },
+    {
+      "sourceId": "hoyoverse-zzz-3-1-benefits-2026-07-17",
+      "digest": "sha256:646c4ef3c457a6fd6cc6bb9f1621601a1f6a50f5dba19f7784ea60af5d53039f"
+    }
+  ],
+  "claimReviews": [
+    {
+      "sourceId": "zzz-en-x-1-4-known-issues-2024-12-18",
+      "proposalId": "proposal-fade-adjustment-fix",
+      "decision": "approved",
+      "ledgerClaimId": "claim-zzz-1-4-fade-adjustment-fix"
+    },
+    {
+      "sourceId": "zzz-en-x-1-4-known-issues-2024-12-18",
+      "proposalId": "proposal-multi-issue-compensation",
+      "decision": "approved",
+      "ledgerClaimId": "claim-zzz-1-4-multi-issue-compensation"
+    },
+    {
+      "sourceId": "gamersky-zzz-1-4-fade-2024-12-18",
+      "proposalId": "proposal-player-ownership-frame",
+      "decision": "approved",
+      "ledgerClaimId": "claim-zzz-1-4-player-ownership-frame"
+    },
+    {
+      "sourceId": "hoyoverse-zzz-3-1-benefits-2026-07-17",
+      "proposalId": "proposal-3-1-lucy-outfit-official",
+      "decision": "approved",
+      "ledgerClaimId": "claim-zzz-3-1-lucy-outfit-official"
+    }
+  ],
+  "reviewer": "manual-demo-curator",
+  "reviewedAt": "2026-07-24T01:47:52+08:00"
+}

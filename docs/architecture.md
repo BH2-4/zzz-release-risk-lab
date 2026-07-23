@@ -1,5 +1,25 @@
 # Architecture
 
+## Target AI compilation chain
+
+```text
+public URLs / checked local snapshots
+        ↓
+evidence-ledger/1.0 (sources, claims, grades, languages)
+        ↓
+AI extraction + theory-catalog/1.0 mapping
+        ↓
+compiled-scenario/1.0 (citations + explicit synthetic assumptions)
+        ↓
+hybrid Agent runtime (target) / current deterministic formula baseline
+        ↓
+agent trace → visual bundle → 3D observer
+        ↓
+run-manifest SHA-256 → Injective Testnet
+```
+
+AI exists only at the server-side or offline compilation boundary. The browser never receives a model key, and a model never supplies the final risk probability. `src/ai-provider.js`, `src/evidence-ledger.js`, and `src/scenario-compiler.js` now define the first half of this chain; the hybrid Agent runtime is still pending.
+
 ```mermaid
 flowchart LR
     A["Public evidence<br/>papers, reports, community leads"] --> B["Evidence ledger<br/>A/B/C/F grading"]
@@ -26,6 +46,9 @@ flowchart LR
 
 | Component | Responsibility |
 | --- | --- |
+| `src/evidence-ledger.js` | Validate public sources and claims, enforce evidence grades, and build bounded model input packs |
+| `src/ai-provider.js` | Keep BYOK model credentials in Node and normalize live or recorded structured output provenance |
+| `src/scenario-compiler.js` | Compile and validate evidence-bound synthetic scenarios before they enter the simulator |
 | `src/model.js` | Seeded population, 42-day propagation, comparisons, ensembles and evidence readiness |
 | `src/visualization-data.js` | Renderer-neutral board identities, per-agent visual frames, unavailable Reverse channels and strategy deltas |
 | `src/visualization-bundle.js` | Fixed-width integer encoding, daily random access and browser decoding without simulation logic |
@@ -44,6 +67,8 @@ flowchart LR
 
 ## Trust boundaries
 
-The browser owns no signing key. MetaMask is the signing boundary. The user supplies a contract address, but the commit button remains disabled until `eth_getCode` exactly matches the compiled runtime bytecode. Transaction hashes are validated and rendered with DOM text nodes, not inserted as HTML.
+The browser owns no signing key or model API key. MetaMask is the signing boundary. Model calls use server-side environment variables. The user supplies a contract address, but the commit button remains disabled until `eth_getCode` exactly matches the compiled runtime bytecode. Transaction hashes are validated and rendered with DOM text nodes, not inserted as HTML.
 
 The evidence ledger is separate from model parameters. A source can establish that an event or statement exists; it does not establish a numeric trigger coefficient. Parameters remain explicit experiment assumptions until historical backtesting is added.
+
+Model output is untrusted input. Citation IDs, theory IDs, numeric bindings, regional differences, strategy ranges, and the synthetic scenario marker are validated again before simulation. A non-neutral regional factor cannot be justified by a synthetic assumption.

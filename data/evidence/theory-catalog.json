@@ -1,0 +1,178 @@
+{
+  "schemaVersion": "theory-catalog/1.0",
+  "catalogId": "zzz-fade-crisis-theory-catalog-2026-07-24",
+  "theories": [
+    {
+      "id": "theory-framing",
+      "name": "Framing",
+      "role": "core",
+      "sourceClaimId": "claim-theory-framing",
+      "constructs": ["problem-definition", "causal-attribution", "moral-evaluation", "treatment-recommendation"],
+      "activationCriteria": ["A public text defines the issue, attributes cause, evaluates it, or recommends a treatment."],
+      "observableSignals": ["coded announcement, media, and community frames", "frame share by language, channel, and day"],
+      "allowedParameterPaths": [
+        "scenario.triggers.economic",
+        "scenario.triggers.political",
+        "scenario.triggers.cultural",
+        "scenario.triggers.social",
+        "scenario.triggers.internet"
+      ],
+      "parameterization": "Use deterministic text labels and bounded frame-strength assumptions; do not convert labels directly into risk coefficients.",
+      "forbiddenClaims": ["A frame label proves audience acceptance, causal effect, or population prevalence."],
+      "limitations": ["A frame label is not a causal estimate or a population prevalence estimate."]
+    },
+    {
+      "id": "theory-scct",
+      "name": "Situational Crisis Communication Theory",
+      "role": "core",
+      "sourceClaimId": "claim-theory-scct",
+      "constructs": ["responsibility-attribution", "crisis-type", "crisis-history", "reputational-threat", "response-fit"],
+      "activationCriteria": ["The case contains responsibility attribution and a publisher response or response alternative."],
+      "observableSignals": ["responsibility and controllability language", "response delay", "explanation, apology, correction, and compensation actions"],
+      "allowedParameterPaths": [
+        "scenario.controllability",
+        "scenario.priorCrisis",
+        "strategies.candidate.delayDays",
+        "strategies.candidate.transparency",
+        "strategies.candidate.restitution",
+        "strategies.candidate.correctiveAction"
+      ],
+      "parameterization": "Represent crisis type and history as bounded latent assumptions and the response as an explicit action vector; estimate no ZZZ-specific effect size.",
+      "forbiddenClaims": ["SCCT guarantees that a selected response will reduce risk in this game or version."],
+      "limitations": ["Current parameter weights are bounded research assumptions and are not historically calibrated effect sizes."]
+    },
+    {
+      "id": "theory-stops",
+      "name": "Situational Theory of Problem Solving",
+      "role": "core",
+      "sourceClaimId": "claim-theory-stops",
+      "constructs": ["problem-recognition", "constraint-recognition", "involvement-recognition", "referent-criterion", "situational-motivation", "communicative-action"],
+      "activationCriteria": ["Public material contains observable problem, constraint, involvement, information-seeking, or information-sharing cues."],
+      "observableSignals": ["problem and constraint cues in public posts", "seeking, selecting, forwarding, and sharing actions"],
+      "allowedParameterPaths": [
+        "agents.problemRecognition",
+        "agents.constraintRecognition",
+        "agents.involvementRecognition",
+        "agents.communicationPropensity",
+        "agents.networkActivity"
+      ],
+      "parameterization": "Use latent appraisal ranges for synthetic representatives and keep public text codes separate from unobserved individual psychology.",
+      "forbiddenClaims": ["A public post reveals the psychological state of silent players or measures the full player population."],
+      "limitations": ["Public posts cannot identify silent players' latent appraisals without direct measurement."]
+    },
+    {
+      "id": "theory-threshold",
+      "name": "Collective behavior threshold model",
+      "role": "core",
+      "sourceClaimId": "claim-theory-threshold",
+      "constructs": ["heterogeneous-threshold", "activation-cascade"],
+      "activationCriteria": ["The simulation needs an explicit rule for when heterogeneous representatives begin public participation."],
+      "observableSignals": ["first public action time", "cumulative active share", "activation sequence"],
+      "allowedParameterPaths": ["agents.threshold", "agents.influence", "simulation.relationEdges"],
+      "parameterization": "Run sensitivity ensembles over synthetic threshold distributions; do not infer a unique distribution from one aggregate event curve.",
+      "forbiddenClaims": ["A fitted synthetic threshold distribution represents the real player population."],
+      "limitations": ["Synthetic thresholds are mechanisms, not estimates of real population distributions."]
+    },
+    {
+      "id": "theory-smcc",
+      "name": "Social-Mediated Crisis Communication model",
+      "role": "core",
+      "sourceClaimId": "claim-theory-smcc",
+      "constructs": ["information-source", "information-form", "media-use", "third-party-influence", "information-overload"],
+      "activationCriteria": ["The case spans official, third-party, social, or traditional media sources and observable seeking or sharing."],
+      "observableSignals": ["source and account role", "channel and cross-platform path", "seeking, sharing, and overload proxies"],
+      "allowedParameterPaths": ["agents.sourceCredibility", "agents.networkActivity", "simulation.relationEdges", "scenario.triggers.internet"],
+      "parameterization": "Encode channel roles, edge types, and bounded credibility assumptions; preserve platform sampling bias.",
+      "forbiddenClaims": ["Platform engagement or repost volume equals support rate or player-population prevalence."],
+      "limitations": ["Platform users and visible interactions do not represent the complete player population."]
+    },
+    {
+      "id": "theory-sarf",
+      "name": "Social Amplification of Risk Framework",
+      "role": "core",
+      "sourceClaimId": "claim-theory-sarf",
+      "constructs": ["risk-signal", "amplification-station", "attenuation", "social-response", "secondary-impact"],
+      "activationCriteria": ["A signal moves through multiple individual, group, media, institutional, regional, or international layers."],
+      "observableSignals": ["cross-layer signal pickup", "amplification or attenuation events", "secondary issues and spillovers"],
+      "allowedParameterPaths": [
+        "simulation.amplification",
+        "simulation.attenuation",
+        "simulation.relationEdges",
+        "scenario.triggers.social",
+        "scenario.triggers.internet"
+      ],
+      "parameterization": "Use bounded node and edge amplification assumptions across the 42-day graph and expose them to sensitivity analysis.",
+      "forbiddenClaims": ["Visibility amplification proves objective harm, true probability, or a universal coefficient."],
+      "limitations": ["The framework supplies no universal numeric amplification coefficient."]
+    },
+    {
+      "id": "theory-spiral-silence",
+      "name": "Spiral of Silence",
+      "role": "conditional",
+      "sourceClaimId": "claim-theory-spiral-silence",
+      "constructs": ["perceived-opinion-climate", "fear-of-isolation", "willingness-to-speak"],
+      "activationCriteria": ["The scenario explicitly separates private stance from public expression and labels both as synthetic latent variables."],
+      "observableSignals": ["public expression and opinion-climate proxies only"],
+      "allowedParameterPaths": ["agents.privateStance", "agents.expressionPropensity", "agents.perceivedOpinionClimate"],
+      "parameterization": "Keep private stance and expression propensity separate and use wide synthetic ranges when no survey measurement exists.",
+      "forbiddenClaims": ["Public voice reveals the private majority, silent share, or country-level opinion."],
+      "limitations": ["Public data cannot identify the opinions or size of silent groups."]
+    },
+    {
+      "id": "theory-relative-deprivation",
+      "name": "Relative deprivation",
+      "role": "conditional",
+      "sourceClaimId": "claim-theory-relative-deprivation",
+      "constructs": ["comparison-reference", "perceived-disadvantage", "injustice-affect", "fairness-gap"],
+      "activationCriteria": ["The case contains an explicit comparison standard plus perceived unfairness, anger, or resentment."],
+      "observableSignals": ["comparison target", "differential treatment or resource gap", "fairness and anger language"],
+      "allowedParameterPaths": ["scenario.triggers.economic", "scenario.triggers.social", "agents.comparisonGap"],
+      "parameterization": "Enable only for explicit reward, compensation, ownership, or differential-treatment comparisons; keep individual and group levels separate.",
+      "forbiddenClaims": ["General negative sentiment is sufficient evidence of relative deprivation."],
+      "limitations": ["The presence of comparison language does not establish deprivation as the sole cause of a response."]
+    },
+    {
+      "id": "theory-stakeholder-salience",
+      "name": "Stakeholder salience",
+      "role": "conditional",
+      "sourceClaimId": "claim-theory-stakeholder-salience",
+      "constructs": ["power", "legitimacy", "urgency"],
+      "activationCriteria": ["A publisher decision layer must prioritize attention or response resources among stakeholder claims."],
+      "observableSignals": ["institutional or platform power proxies", "claim legitimacy evidence", "time sensitivity"],
+      "allowedParameterPaths": ["stakeholders.power", "stakeholders.legitimacy", "stakeholders.urgency", "agents.influence"],
+      "parameterization": "Use only in the publisher prioritization layer and keep the three perceived attributes separate.",
+      "forbiddenClaims": ["High volume proves legitimacy, correctness, or moral priority."],
+      "limitations": ["Influence or volume does not make a claim more correct or legitimate."]
+    },
+    {
+      "id": "theory-connective-action",
+      "name": "Logic of connective action",
+      "role": "conditional",
+      "sourceClaimId": "claim-theory-connective-action",
+      "constructs": ["personalized-expression", "digitally-mediated-coordination", "connective-network"],
+      "activationCriteria": ["Evidence shows sustained decentralized coordination such as petitions, boycotts, or coordinated content reuse."],
+      "observableSignals": ["personalized message reuse", "decentralized sharing", "organizational account participation", "network topology"],
+      "allowedParameterPaths": ["agents.networkActivity", "scenario.triggers.internet", "simulation.relationEdges"],
+      "parameterization": "Enable graph coordination mode only when evidence exceeds ordinary short-lived complaint activity.",
+      "forbiddenClaims": ["A viral post or short complaint wave automatically constitutes connective action."],
+      "limitations": ["Public platform activity is an observed proxy and does not represent the full player population."]
+    },
+    {
+      "id": "theory-image-repair",
+      "name": "Image Repair Discourse",
+      "role": "conditional",
+      "sourceClaimId": "claim-theory-image-repair",
+      "constructs": ["denial", "evading-responsibility", "reducing-offensiveness", "corrective-action", "mortification"],
+      "activationCriteria": ["The case contains an official response statement that needs sentence-level strategy coding."],
+      "observableSignals": ["official statement sentences and response timing"],
+      "allowedParameterPaths": [
+        "strategies.candidate.transparency",
+        "strategies.candidate.restitution",
+        "strategies.candidate.correctiveAction"
+      ],
+      "parameterization": "Use as a response-action ontology alongside SCCT, not as a separate numerical propagation model.",
+      "forbiddenClaims": ["Selecting an image-repair category guarantees response effectiveness."],
+      "limitations": ["Response classification alone does not establish effectiveness."]
+    }
+  ]
+}

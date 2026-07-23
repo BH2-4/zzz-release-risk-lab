@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "vertical-slice/1.0",
+  "id": "zzz-tv-mode-release-path-v1",
+  "title": "《绝区零》主线承载方式变更的合成发行压力测试",
+  "scope": {
+    "game": "zenless-zone-zero",
+    "cycleDays": 42,
+    "populationSize": 125,
+    "targetLanguages": ["zh-CN", "en", "ja"],
+    "scenarioType": "synthetic-counterfactual"
+  },
+  "brief": "Using the documented TV Mode pacing criticism and the reported developer response only as a historical mechanism, compile a fictional next-version ZZZ scenario in which a new main-story presentation system interrupts combat flow. Compare delayed silence against a fast explanation, bounded adjustment, localized communication, and follow-up review. Do not claim that this event will occur.",
+  "evidenceClaimIds": [
+    "claim-zzz-tv-mode-preview-pacing",
+    "claim-zzz-tv-mode-developer-response"
+  ],
+  "theoryIds": [
+    "theory-framing",
+    "theory-scct",
+    "theory-threshold",
+    "theory-connective-action"
+  ],
+  "strategyLabels": {
+    "baseline": "延迟回应",
+    "candidate": "解释 + 有界调整 + 本地化沟通 + 后续复盘"
+  },
+  "successCriteria": [
+    "Every historical statement resolves to a claim and public source URL.",
+    "Every scenario number is bound to evidence or an explicit synthetic assumption.",
+    "The same compiled input and seed reproduce the same 42-day run.",
+    "The result compares two strategies and identifies the groups, mechanisms, and days that create the divergence.",
+    "The 3D observer consumes the generated artifact without inventing unavailable channels."
+  ],
+  "boundaries": [
+    "This is a scenario stress test, not a forecast or a real-world probability estimate.",
+    "The historical case is an analogy; the fictional next-version event is explicitly synthetic.",
+    "Regional factors remain 1.0 unless direct regional evidence is added.",
+    "No claim is made about the prevalence of player opinion."
+  ],
+  "openEvidenceGaps": [
+    "Directly archive an accessible official developer statement or video transcript.",
+    "Replace the Japanese search-index lead with a directly checked Japanese source.",
+    "Add Chinese and Japanese primary/community materials about the same mechanism before claiming three-language semantic comparison."
+  ]
+}

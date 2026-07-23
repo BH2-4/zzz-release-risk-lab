@@ -1,0 +1,119 @@
+[
+  {
+    "schemaVersion": "evidence-extraction/1.0",
+    "sourceId": "zzz-en-x-1-4-known-issues-2024-12-18",
+    "language": "en",
+    "reviewStatus": "approved",
+    "review": {
+      "reviewer": "manual-demo-curator",
+      "reviewedAt": "2026-07-24T01:47:08+08:00"
+    },
+    "claims": [
+      {
+        "id": "proposal-fade-adjustment-fix",
+        "claimType": "fact",
+        "text": "The official notice confirms the specific-angle fade adjustment and a fix for circumstances where its display was incorrect.",
+        "anchors": [
+          {
+            "quote": "Fixes an issue in Version 1.4 where the fading effect of the \"Agent appears faded when viewed from specific angles\" adjustment did not display correctly under certain circumstances.",
+            "locator": "second issue bullet"
+          }
+        ],
+        "allowedUses": ["historical-mechanism", "issue-framing", "response-design"]
+      },
+      {
+        "id": "proposal-multi-issue-compensation",
+        "claimType": "fact",
+        "text": "The official multi-issue notice apologized and offered 300 Polychrome for the notice as a whole.",
+        "anchors": [
+          {
+            "quote": "We sincerely apologize for the disruption these issues have caused to your gaming experience. As compensation, we will be sending you Polychrome ×300 via in-game mail.",
+            "locator": "apology and compensation paragraph after four issue bullets"
+          }
+        ],
+        "allowedUses": ["historical-mechanism", "response-design"]
+      }
+    ],
+    "stakeholders": [],
+    "frames": [],
+    "limitations": [
+      "The notice does not say the fade adjustment was removed.",
+      "The 300 Polychrome cannot be attributed only to the fade issue.",
+      "The notice states no censorship motive."
+    ]
+  },
+  {
+    "schemaVersion": "evidence-extraction/1.0",
+    "sourceId": "gamersky-zzz-1-4-fade-2024-12-18",
+    "language": "zh-CN",
+    "reviewStatus": "approved",
+    "review": {
+      "reviewer": "manual-demo-curator",
+      "reviewedAt": "2026-07-24T01:47:08+08:00"
+    },
+    "claims": [
+      {
+        "id": "proposal-player-ownership-frame",
+        "claimType": "reported-fact",
+        "text": "The article reports one public interpretation that paid or unlocked characters should remain fully viewable.",
+        "anchors": [
+          {
+            "quote": "他们已经花钱购买解锁这些角色，但却不让全方位的欣赏角色。",
+            "locator": "opening paragraph, quoted overseas-player statement"
+          }
+        ],
+        "allowedUses": ["historical-mechanism", "issue-framing"]
+      }
+    ],
+    "stakeholders": [],
+    "frames": [
+      {
+        "id": "frame-owned-content-access",
+        "problemDefinition": "The fade is defined as restricted access to a character already paid for or unlocked.",
+        "causalAttribution": "The visible game behavior is attributed to the publisher-side display rule.",
+        "moralEvaluation": "The quoted player presents the restriction as inconsistent with having obtained the character.",
+        "treatmentRecommendation": null,
+        "anchors": [
+          {
+            "quote": "他们已经花钱购买解锁这些角色，但却不让全方位的欣赏角色。",
+            "locator": "opening paragraph, quoted overseas-player statement"
+          }
+        ]
+      }
+    ],
+    "limitations": [
+      "The quoted frame is evidence that the interpretation appeared publicly, not that it was prevalent.",
+      "The article supplies no regional or population distribution."
+    ]
+  },
+  {
+    "schemaVersion": "evidence-extraction/1.0",
+    "sourceId": "hoyoverse-zzz-3-1-benefits-2026-07-17",
+    "language": "zh-CN",
+    "reviewStatus": "approved",
+    "review": {
+      "reviewer": "manual-demo-curator",
+      "reviewedAt": "2026-07-24T01:47:08+08:00"
+    },
+    "claims": [
+      {
+        "id": "proposal-3-1-lucy-outfit-official",
+        "claimType": "fact",
+        "text": "The official Version 3.1 benefits page states that the event 'Summer Waves Arrive' provides Lucy's swimsuit outfit 'Princess Holiday' for free.",
+        "anchors": [
+          {
+            "quote": "参与活动「恰浪花逐夏而至」免费领取露西泳装「公主假日」",
+            "locator": "official content API sContent, fourth benefit bullet"
+          }
+        ],
+        "allowedUses": ["version-context", "synthetic-counterfactual-anchor"]
+      }
+    ],
+    "stakeholders": [],
+    "frames": [],
+    "limitations": [
+      "This official product-context fact does not imply any display defect, audience reaction, or future controversy.",
+      "No evidence indicates the outfit will exhibit a fade problem or generate controversy."
+    ]
+  }
+]

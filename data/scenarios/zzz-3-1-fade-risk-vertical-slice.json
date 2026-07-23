@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "vertical-slice/1.0",
+  "id": "zzz-3-1-fade-risk-v1",
+  "title": "《绝区零》3.1 角色展示异常与拥有感框架压力测试",
+  "scope": {
+    "game": "zenless-zone-zero",
+    "cycleDays": 42,
+    "populationSize": 125,
+    "targetLanguages": ["zh-CN", "en", "ja"],
+    "scenarioType": "synthetic-counterfactual"
+  },
+  "brief": "Use the verified Version 1.4 specific-angle fade adjustment and display-fix notice, the bounded media report of an ownership-related player frame, and the verified Version 3.1 release context to compile a synthetic stress test. Assume only for the counterfactual that a Version 3.1 character outfit fades outside its intended viewing boundary and visible discussion frames that behavior as restricted access to obtained content. Compare a delayed ambiguous response with a rapid boundary explanation, corrective update, explicitly scoped compensation, localized communication, and follow-up review. Do not claim this event will occur or output a real-world probability.",
+  "evidenceClaimIds": [
+    "claim-zzz-1-4-fade-adjustment-fix",
+    "claim-zzz-1-4-multi-issue-compensation",
+    "claim-zzz-1-4-player-ownership-frame",
+    "claim-zzz-3-1-release-date",
+    "claim-zzz-3-1-development-boundary",
+    "claim-zzz-3-1-lucy-outfit-official"
+  ],
+  "theoryClaimIds": [
+    "claim-zzz-1-4-fade-adjustment-fix",
+    "claim-zzz-1-4-multi-issue-compensation",
+    "claim-zzz-1-4-player-ownership-frame",
+    "claim-zzz-3-1-lucy-outfit-official"
+  ],
+  "theoryCandidateIds": [
+    "theory-framing",
+    "theory-scct",
+    "theory-relative-deprivation",
+    "theory-image-repair"
+  ],
+  "strategyLabels": {
+    "baseline": "延迟且边界模糊的回应",
+    "candidate": "快速说明边界 + 纠正更新 + 明确补偿范围 + 本地化复盘"
+  },
+  "successCriteria": [
+    "Every historical and Version 3.1 context statement resolves to a public source and ledger Claim ID.",
+    "The synthetic fade event is never presented as a released Version 3.1 fact or forecast.",
+    "Only mappings approved in a content-addressed Theory System reach scenario compilation.",
+    "Every scenario, strategy, and stakeholder number binds to evidence or an explicit synthetic assumption.",
+    "The same compiled input and seed reproduce the same paired 42-day run."
+  ],
+  "boundaries": [
+    "This is a synthetic counterfactual stress test, not a forecast or a real-world probability estimate.",
+    "The Version 1.4 notice confirms a display anomaly fix, not a full rollback of the fade adjustment.",
+    "The 300 Polychrome compensated a four-issue notice and cannot be attributed solely to the fade issue.",
+    "The Lucy outfit is a verified official product-context fact; no evidence says it will exhibit a fade issue or generate controversy.",
+    "Public posts and engagement cannot establish opinion prevalence or silent-player views.",
+    "Regional factors remain 1.0 unless direct regional evidence is added."
+  ],
+  "openEvidenceGaps": [
+    "Obtain directly checked Japanese material before claiming three-language frame comparison.",
+    "Add timestamped public-community samples only if collection remains terms-compliant and reproducible.",
+    "Calibrate no effect size from this single historical event."
+  ]
+}

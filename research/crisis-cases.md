@@ -4,6 +4,37 @@
 
 用途：生成压力测试情景，不用于给真实群体定性，也不用于声明现实预测准确率
 
+## C0 《绝区零》TV Mode / 主线承载方式调整
+
+- 环境：《绝区零》测试期到 1.4 版本前后的 TV Mode / 主线呈现方式。
+- 可核验事实边界：Eurogamer 的二测预览把主要节奏问题归因于 TV Mode；GamesRadar+ 后续报道并引述开发团队承认上线时存在问题，同时描述后续主线采用 stage-based 方向。
+- 建模题眼：一个承担叙事和探索功能的核心系统，同时打断另一部分玩家看重的战斗节奏；发行响应不是简单道歉，而是解释设计意图、调整主路径和保留差异化玩法之间的权衡。
+- 适用理论：框架、SCCT、集体行为阈值、连接行动。
+- 证据等级：B，媒体原文可直接访问；官方 HoYoLAB 1.4 页面本轮受地区阻断，只保留 C 级线索。
+- 限制：没有官方量化负反馈规模，不能声称意见具有人群代表性，也不能把所有 1.4 改动归因于单一舆情因素。
+
+来源：
+
+- 标题：Zenless Zone Zero would be brilliant if it didn't keep wasting your time
+- 网站：Eurogamer
+- URL：https://www.eurogamer.net/zenless-zone-zero-would-be-brilliant-if-it-didnt-keep-wasting-your-time
+- 发布时间：2023-12-16
+- 访问时间：2026-07-23
+
+- 标题：Zenless Zone Zero is toning down its divisive "TV mode" after "a lot of negative feedback," which means I can finally try this painfully gorgeous action RPG
+- 网站：GamesRadar+
+- URL：https://www.gamesradar.com/games/action-rpg/zenless-zone-zero-is-toning-down-its-divisive-tv-mode-after-a-lot-of-negative-feedback-which-means-i-can-finally-try-this-painfully-gorgeous-action-rpg/
+- 发布时间：2024-09-24
+- 访问时间：2026-07-23
+
+官方候选来源（当前不进入默认编译包）：
+
+- 标题：Version 1.4 "A Storm of Falling Stars" Update Details
+- 网站：HoYoLAB / Zenless Zone Zero
+- URL：https://www.hoyolab.com/article/35654082
+- 发布时间：2024-12-17
+- 复核状态：本轮直接访问和公开 API 均返回地区阻断，保持 C 级
+
 ## C1 角色机制修复后回退
 
 - 环境：《原神》4.8，那维莱特重击高速旋转问题。
@@ -55,7 +86,7 @@
 
 ## 默认 Demo 的处理
 
-- 默认只展示 C1 为“来源较强的历史原型”。
+- 默认首切片改为 C0；C1 保留为跨游戏响应策略类比。
 - C2/C3 明确显示“研究夹具”，不提供预测准确率或现实概率。
 - 绝区零是模拟应用环境，不声称上述事件发生于绝区零。
 - 后续任何地区差异都必须附独立公开证据；没有证据时各地区系数默认为 `1.0`。
