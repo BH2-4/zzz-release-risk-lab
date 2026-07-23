@@ -1,0 +1,17 @@
+{
+  "manifestVersion": "visual-data-manifest/1.0",
+  "artifact": "visual-data-beta0.2.json",
+  "artifactVersion": "visual-data-beta0.2",
+  "bundleSchemaVersion": "visual-bundle/1.0",
+  "byteLength": 1079214,
+  "sha256": "55c4e8e43be77bd396510bac2469549a2bed787c180a134b649d20dd4b14f4f1",
+  "populationSize": 125,
+  "cycleDays": 42,
+  "capabilities": {
+    "dailyRandomAccess": true,
+    "explainableDrivers": true,
+    "relationEdges": false,
+    "reverseVoice": false,
+    "reverseHeat": false
+  }
+}

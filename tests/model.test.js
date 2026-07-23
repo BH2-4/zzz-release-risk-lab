@@ -2,6 +2,7 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 
 const {
+  TRACE_DRIVER_FIELDS,
   assessEvidenceReadiness,
   compareResponses,
   createPopulation,
@@ -180,6 +181,52 @@ test('runSimulationTrace is deterministic and agrees with aggregate risk', () =>
     const meanRisk = frame.agents.reduce((sum, agent) => sum + agent.risk, 0) / frame.agents.length
     assert.ok(Math.abs(first.timeline[index].risk - meanRisk * 100) <= 0.02)
   })
+})
+
+test('explainable trace adds signed driver contributions without changing simulation results', () => {
+  const population = createPopulation({ size: 125, seed: 17 })
+  const options = {
+    scenario: rewardScenario,
+    response: correctiveResponse,
+    population,
+    seed: 23,
+  }
+  const legacy = runSimulationTrace(options)
+  const explainable = runSimulationTrace({ ...options, includeDrivers: true })
+
+  assert.equal(legacy.traceVersion, 'agent-trace/1.0')
+  assert.equal(explainable.traceVersion, 'agent-trace/1.1')
+  assert.deepEqual(explainable.driverFields, TRACE_DRIVER_FIELDS)
+  assert.deepEqual(explainable.timeline, legacy.timeline)
+  assert.equal(explainable.peakRisk, legacy.peakRisk)
+  assert.equal(explainable.finalRisk, legacy.finalRisk)
+
+  explainable.agentTimeline.forEach((frame, frameIndex) => {
+    frame.agents.forEach((agent, agentIndex) => {
+      const legacyAgent = legacy.agentTimeline[frameIndex].agents[agentIndex]
+      assert.deepEqual(
+        {
+          id: agent.id,
+          risk: agent.risk,
+          pressure: agent.pressure,
+          networkPressure: agent.networkPressure,
+          responseBuffer: agent.responseBuffer,
+        },
+        legacyAgent,
+      )
+      assert.deepEqual(Object.keys(agent.drivers), TRACE_DRIVER_FIELDS)
+      const driverTotal = Object.values(agent.drivers).reduce((sum, value) => sum + value, 0)
+      assert.ok(Math.abs(driverTotal - agent.risk) <= 0.000001)
+    })
+  })
+
+  const preReleaseAgent = explainable.agentTimeline[0].agents[0]
+  assert.equal(preReleaseAgent.drivers.background, preReleaseAgent.risk)
+  assert.equal(preReleaseAgent.drivers.network, 0)
+  const responseAgent = explainable.agentTimeline[25].agents[0]
+  assert.ok(responseAgent.drivers.domain > 0)
+  assert.ok(responseAgent.drivers.trust < 0)
+  assert.ok(responseAgent.drivers.response <= 0)
 })
 
 test('a fast corrective response lowers peak and final risk relative to silence', () => {

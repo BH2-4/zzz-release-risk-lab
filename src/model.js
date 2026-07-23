@@ -4,6 +4,21 @@ const LEVELS = ['individual', 'group', 'region', 'country', 'international']
 const DOMAINS = ['economic', 'political', 'cultural', 'social', 'internet']
 const REGIONS = ['east-asia', 'north-america', 'europe', 'southeast-asia', 'latin-america']
 const CYCLE_DAYS = 42
+const TRACE_DRIVER_FIELDS = Object.freeze([
+  'background',
+  'domain',
+  'sharedTrigger',
+  'priorCrisis',
+  'controllability',
+  'identityFriction',
+  'network',
+  'trust',
+  'randomVariation',
+  'pressureClamp',
+  'response',
+  'riskClamp',
+  'roundingResidual',
+])
 
 function createRandom(seed) {
   let state = Number(seed) >>> 0
@@ -123,7 +138,23 @@ function aggregatePopulation(population, risks, key) {
   )
 }
 
-function runSimulationCore({ scenario, response = {}, population, seed = 1 }, includeAgentTimeline) {
+function createDriverBreakdown(contributions, roundedRisk) {
+  const drivers = {}
+  let total = 0
+  for (const field of TRACE_DRIVER_FIELDS) {
+    if (field === 'roundingResidual') continue
+    const value = round(contributions[field] || 0, 6)
+    drivers[field] = value
+    total += value
+  }
+  drivers.roundingResidual = round(roundedRisk - total, 6)
+  return drivers
+}
+
+function runSimulationCore(
+  { scenario, response = {}, population, seed = 1 },
+  { includeAgentTimeline = false, includeDrivers = false } = {},
+) {
   const validation = validateScenario(scenario)
   if (!validation.valid) throw new TypeError(validation.errors.join('; '))
   if (!Array.isArray(population) || population.length === 0) {
@@ -147,12 +178,15 @@ function runSimulationCore({ scenario, response = {}, population, seed = 1 }, in
 
     const latestStates = population.map((agent, index) => {
       if (age < 0) {
-        return {
-          risk: round(0.025 + random() * 0.018, 4),
+        const risk = round(0.025 + random() * 0.018, 4)
+        const state = {
+          risk,
           pressure: 0,
           networkPressure: 0,
           responseBuffer: 0,
         }
+        if (includeDrivers) state.drivers = createDriverBreakdown({ background: risk }, risk)
+        return state
       }
 
       const domainTrigger = scenario.triggers[agent.domain]
@@ -176,15 +210,35 @@ function runSimulationCore({ scenario, response = {}, population, seed = 1 }, in
         noise
       const responseBuffer = responseActive ? mitigation * (0.17 + scenario.controllability * 0.13) : 0
       const persistence = 0.48 + (1 - mitigation) * 0.23
-      const pressure = clamp(raw * eventPressure * persistence + raw * 0.34)
+      const temporalScale = eventPressure * persistence + 0.34
+      const unclampedPressure = raw * temporalScale
+      const pressure = clamp(unclampedPressure)
       const risk = clamp(pressure - responseBuffer)
       peakRisks[index] = Math.max(peakRisks[index], risk)
-      return {
-        risk: round(risk, 4),
+      const roundedRisk = round(risk, 4)
+      const state = {
+        risk: roundedRisk,
         pressure: round(pressure, 4),
         networkPressure: round(clamp(amplification * agent.susceptibility), 4),
         responseBuffer: round(responseBuffer, 4),
       }
+      if (includeDrivers) {
+        state.drivers = createDriverBreakdown({
+          background: 0.08 * temporalScale,
+          domain: domainTrigger * regionFactor * 0.43 * temporalScale,
+          sharedTrigger: triggerMean * 0.13 * temporalScale,
+          priorCrisis: scenario.priorCrisis * 0.1 * temporalScale,
+          controllability: scenario.controllability * 0.09 * temporalScale,
+          identityFriction: identityFriction * temporalScale,
+          network: amplification * agent.susceptibility * temporalScale,
+          trust: -trustBuffer * temporalScale,
+          randomVariation: noise * temporalScale,
+          pressureClamp: pressure - unclampedPressure,
+          response: -responseBuffer,
+          riskClamp: risk - (pressure - responseBuffer),
+        }, roundedRisk)
+      }
+      return state
     })
 
     latestRisks = latestStates.map((state) => state.risk)
@@ -225,20 +279,24 @@ function runSimulationCore({ scenario, response = {}, population, seed = 1 }, in
     agentPeakMean: round(average(peakRisks) * 100),
   }
   if (includeAgentTimeline) {
-    result.traceVersion = 'agent-trace/1.0'
+    result.traceVersion = includeDrivers ? 'agent-trace/1.1' : 'agent-trace/1.0'
     result.simulationSeed = Number(seed)
     result.populationFingerprint = populationFingerprint(population)
+    if (includeDrivers) result.driverFields = TRACE_DRIVER_FIELDS
     result.agentTimeline = agentTimeline
   }
   return result
 }
 
 function runSimulation(options) {
-  return runSimulationCore(options, false)
+  return runSimulationCore(options)
 }
 
 function runSimulationTrace(options) {
-  return runSimulationCore(options, true)
+  return runSimulationCore(options, {
+    includeAgentTimeline: true,
+    includeDrivers: options?.includeDrivers === true,
+  })
 }
 
 function compareResponses({ scenario, baselineResponse, candidateResponse, population, seed = 1 }) {
@@ -324,6 +382,7 @@ const modelApi = {
   DOMAINS,
   LEVELS,
   REGIONS,
+  TRACE_DRIVER_FIELDS,
   assessEvidenceReadiness,
   compareResponses,
   createPopulation,

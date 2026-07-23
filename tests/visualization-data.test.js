@@ -199,3 +199,55 @@ test('visual comparison requires matching scenario, seed, and cycle', () => {
     /seed/i,
   )
 })
+
+test('explainable visual comparison exposes driver values and deltas but no invented relation edges', () => {
+  const population = createPopulation({ size: 125, seed: 101 })
+  const baselineSimulation = runSimulationTrace({
+    scenario,
+    response: { id: 'silence', delayDays: 8 },
+    population,
+    seed: 303,
+    includeDrivers: true,
+  })
+  const candidateSimulation = runSimulationTrace({
+    scenario,
+    response,
+    population,
+    seed: 303,
+    includeDrivers: true,
+  })
+  const comparison = createVisualComparison({ baselineSimulation, candidateSimulation, population })
+
+  assert.equal(comparison.channels.frontDrivers.status, 'available')
+  assert.equal(comparison.channels.relationEdges.status, 'unavailable')
+  assert.deepEqual(
+    Object.keys(comparison.strategies.candidate.frames[0].agents[0].front.drivers),
+    candidateSimulation.driverFields,
+  )
+  const day42Delta = comparison.deltaFrames.at(-1).agents[0].front.driverDeltas
+  assert.deepEqual(Object.keys(day42Delta), candidateSimulation.driverFields)
+  assert.equal(
+    day42Delta.response,
+    Math.round((
+      comparison.strategies.candidate.frames.at(-1).agents[0].front.drivers.response -
+      comparison.strategies.baseline.frames.at(-1).agents[0].front.drivers.response
+    ) * 1000000) / 1000000,
+  )
+})
+
+test('visual comparison rejects mixed trace capabilities', () => {
+  const population = createPopulation({ size: 125, seed: 101 })
+  const baselineSimulation = runSimulationTrace({ scenario, response, population, seed: 303 })
+  const candidateSimulation = runSimulationTrace({
+    scenario,
+    response,
+    population,
+    seed: 303,
+    includeDrivers: true,
+  })
+
+  assert.throws(
+    () => createVisualComparison({ baselineSimulation, candidateSimulation, population }),
+    /trace version/i,
+  )
+})

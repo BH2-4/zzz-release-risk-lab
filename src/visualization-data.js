@@ -7,6 +7,7 @@ const DOMAIN_ORDER = ['economic', 'political', 'cultural', 'social', 'internet']
 const REGION_ORDER = ['east-asia', 'north-america', 'europe', 'southeast-asia', 'latin-america']
 const MIN_FRONT_INTEGRITY = 0.2
 const BOARD_POPULATION_SIZE = LEVEL_ORDER.length * DOMAIN_ORDER.length * REGION_ORDER.length
+const SUPPORTED_TRACE_VERSIONS = new Set(['agent-trace/1.0', 'agent-trace/1.1'])
 
 function clamp(value, min = 0, max = 1) {
   return Math.min(max, Math.max(min, value))
@@ -48,7 +49,7 @@ function validateInputs(simulation, population) {
   if (population.length !== simulation.populationSize) {
     throw new TypeError('A complete population matching the agent trace is required')
   }
-  if (simulation.traceVersion !== 'agent-trace/1.0') {
+  if (!SUPPORTED_TRACE_VERSIONS.has(simulation.traceVersion)) {
     throw new TypeError(`Unsupported agent trace version: ${simulation.traceVersion}`)
   }
 
@@ -65,6 +66,16 @@ function validateInputs(simulation, population) {
   }
   if (modelApi.populationFingerprint(population) !== simulation.populationFingerprint) {
     throw new TypeError('Population fingerprint does not match the agent trace')
+  }
+  const hasDrivers = simulation.traceVersion === 'agent-trace/1.1'
+  if (hasDrivers) {
+    if (
+      !Array.isArray(simulation.driverFields) ||
+      simulation.driverFields.length !== modelApi.TRACE_DRIVER_FIELDS.length ||
+      simulation.driverFields.some((field, index) => field !== modelApi.TRACE_DRIVER_FIELDS[index])
+    ) {
+      throw new TypeError('Agent trace driver fields do not match the model contract')
+    }
   }
 
   const boardSlots = new Set(population.map((agent) => `${agent.level}:${agent.domain}:${agent.region}`))
@@ -89,6 +100,16 @@ function validateInputs(simulation, population) {
     for (const agent of frame.agents) {
       for (const field of ['risk', 'pressure', 'networkPressure', 'responseBuffer']) {
         assertNormalized(agent[field], `Agent trace ${field}`)
+      }
+      if (hasDrivers) {
+        if (!agent.drivers || typeof agent.drivers !== 'object') {
+          throw new TypeError('Explainable agent trace requires driver values')
+        }
+        for (const field of simulation.driverFields) {
+          if (!Number.isFinite(agent.drivers[field])) {
+            throw new TypeError(`Agent trace driver ${field} must be finite`)
+          }
+        }
       }
     }
   }
@@ -123,9 +144,9 @@ function createIdentity(agent) {
   }
 }
 
-function createVisualAgent(agent) {
+function createVisualAgent(agent, driverFields) {
   const integrity = integrityFromRisk(agent.risk)
-  return {
+  const visualAgent = {
     id: agent.id,
     front: {
       risk: agent.risk,
@@ -141,10 +162,51 @@ function createVisualAgent(agent) {
       status: 'unavailable',
     },
   }
+  if (driverFields) {
+    visualAgent.front.drivers = Object.fromEntries(
+      driverFields.map((field) => [field, agent.drivers[field]]),
+    )
+  }
+  return visualAgent
 }
 
 function createVisualReplay({ simulation, population }) {
   validateInputs(simulation, population)
+  const driverFields = simulation.traceVersion === 'agent-trace/1.1' ? simulation.driverFields : null
+  const channels = {
+    frontIntegrity: {
+      status: 'available',
+      source: 'agent.risk',
+      range: [MIN_FRONT_INTEGRITY, 1],
+      semantics: '模型情景压力下的可视稳定性，不代表真实人群受损。',
+    },
+    reverseVoice: {
+      status: 'unavailable',
+      source: null,
+      range: null,
+      semantics: '互联网声量尚未建模，正式渲染不得推断或伪造数值。',
+    },
+    reverseHeat: {
+      status: 'unavailable',
+      source: null,
+      range: null,
+      semantics: '互联网情绪热度尚未建模，保留黑到红的未来视觉通道。',
+    },
+  }
+  if (driverFields) {
+    channels.frontDrivers = {
+      status: 'available',
+      source: 'agent.drivers',
+      fields: driverFields,
+      semantics: '有符号模型贡献项之和等于展示风险；只解释模型公式，不证明现实因果。',
+    }
+    channels.relationEdges = {
+      status: 'unavailable',
+      source: null,
+      fields: null,
+      semantics: '当前 network 项来自群体均值放大，不能伪装成 Agent 之间的真实传播边。',
+    }
+  }
 
   return {
     schemaVersion: VISUAL_REPLAY_SCHEMA_VERSION,
@@ -162,32 +224,13 @@ function createVisualReplay({ simulation, population }) {
       columns: DOMAIN_ORDER,
       slots: REGION_ORDER,
     },
-    channels: {
-      frontIntegrity: {
-        status: 'available',
-        source: 'agent.risk',
-        range: [MIN_FRONT_INTEGRITY, 1],
-        semantics: '模型情景压力下的可视稳定性，不代表真实人群受损。',
-      },
-      reverseVoice: {
-        status: 'unavailable',
-        source: null,
-        range: null,
-        semantics: '互联网声量尚未建模，正式渲染不得推断或伪造数值。',
-      },
-      reverseHeat: {
-        status: 'unavailable',
-        source: null,
-        range: null,
-        semantics: '互联网情绪热度尚未建模，保留黑到红的未来视觉通道。',
-      },
-    },
+    channels,
     identities: population.map(createIdentity),
     frames: simulation.agentTimeline.map((frame) => ({
       day: frame.day,
       phase: frame.phase,
       aggregateRisk: frame.risk,
-      agents: frame.agents.map(createVisualAgent),
+      agents: frame.agents.map((agent) => createVisualAgent(agent, driverFields)),
     })),
     disclaimer: 'Reverse 声量与热度尚未建模；当前 null 是明确的数据边界，不得用风险指数暗中替代。',
   }
@@ -203,10 +246,13 @@ function validateComparisonInputs(baselineSimulation, candidateSimulation) {
   if (baselineSimulation.cycleDays !== candidateSimulation.cycleDays) {
     throw new TypeError('Visual comparison requires the same simulation cycle')
   }
+  if (baselineSimulation.traceVersion !== candidateSimulation.traceVersion) {
+    throw new TypeError('Visual comparison requires the same agent trace version')
+  }
 }
 
-function createDeltaAgent(baseline, candidate) {
-  return {
+function createDeltaAgent(baseline, candidate, driverFields) {
+  const deltaAgent = {
     id: candidate.id,
     front: {
       riskDelta: round(candidate.front.risk - baseline.front.risk),
@@ -222,12 +268,20 @@ function createDeltaAgent(baseline, candidate) {
       status: 'unavailable',
     },
   }
+  if (driverFields) {
+    deltaAgent.front.driverDeltas = Object.fromEntries(driverFields.map((field) => [
+      field,
+      round(candidate.front.drivers[field] - baseline.front.drivers[field], 6),
+    ]))
+  }
+  return deltaAgent
 }
 
 function createVisualComparison({ baselineSimulation, candidateSimulation, population }) {
   validateComparisonInputs(baselineSimulation, candidateSimulation)
   const baseline = createVisualReplay({ simulation: baselineSimulation, population })
   const candidate = createVisualReplay({ simulation: candidateSimulation, population })
+  const driverFields = candidate.channels.frontDrivers?.fields || null
 
   const deltaFrames = candidate.frames.map((candidateFrame, index) => {
     const baselineFrame = baseline.frames[index]
@@ -239,7 +293,11 @@ function createVisualComparison({ baselineSimulation, candidateSimulation, popul
       day: candidateFrame.day,
       phase: candidateFrame.phase,
       aggregateRiskDelta: round(candidateFrame.aggregateRisk - baselineFrame.aggregateRisk),
-      agents: candidateFrame.agents.map((agent) => createDeltaAgent(baselineById.get(agent.id), agent)),
+      agents: candidateFrame.agents.map((agent) => createDeltaAgent(
+        baselineById.get(agent.id),
+        agent,
+        driverFields,
+      )),
     }
   })
 
