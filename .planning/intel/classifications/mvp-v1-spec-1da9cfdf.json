@@ -1,0 +1,24 @@
+{
+  "source_path": "docs/mvp-v1-spec.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "真正 AI MVP 规格 v1",
+  "summary": "Defines the evidence-bounded AI, hybrid-agent, 3D replay, Injective, and delivery acceptance contract for the MVP.",
+  "scope": [
+    "public evidence",
+    "Theory System Agent",
+    "AI scenario compilation",
+    "hybrid Agent runtime",
+    "42-day simulation",
+    "3D evolution observer",
+    "Injective testnet"
+  ],
+  "cross_refs": [
+    "data/scenarios/zzz-3-1-fade-risk-vertical-slice.json",
+    "data/scenarios/zzz-tv-mode-vertical-slice.json"
+  ],
+  "locked": false,
+  "precedence": 1,
+  "notes": ""
+}

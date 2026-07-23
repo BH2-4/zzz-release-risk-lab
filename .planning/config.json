@@ -1,0 +1,67 @@
+{
+  "mode": "interactive",
+  "model_profile": "balanced",
+  "granularity": "standard",
+  "response_language": "Chinese",
+  "context": "dev",
+  "workflow": {
+    "research": true,
+    "plan_check": true,
+    "verifier": true,
+    "auto_advance": false,
+    "nyquist_validation": true,
+    "security_enforcement": true,
+    "security_asvs_level": 2,
+    "security_block_on": "high",
+    "discuss_mode": "assumptions",
+    "research_before_questions": true,
+    "use_worktrees": false,
+    "subagent_timeout": 300000,
+    "test_command": "npm test",
+    "build_command": "npm run build",
+    "test_gate_timeout": 600,
+    "inline_plan_threshold": 10,
+    "mvp_mode": true,
+    "ai_integration_phase": true,
+    "api_coverage_gate": true,
+    "ui_phase": true,
+    "ui_safety_gate": true,
+    "code_review": true,
+    "code_review_depth": "deep",
+    "context_guard_mode": "warn"
+  },
+  "planning": {
+    "commit_docs": true,
+    "search_gitignored": false,
+    "sub_repos": []
+  },
+  "git": {
+    "branching_strategy": "none",
+    "base_branch": "main",
+    "create_tag": true
+  },
+  "parallelization": {
+    "enabled": false,
+    "plan_level": false,
+    "task_level": false,
+    "skip_checkpoints": false,
+    "max_concurrent_agents": 1,
+    "min_plans_for_parallel": 2
+  },
+  "hooks": {
+    "context_warnings": true
+  },
+  "manager": {
+    "flags": {
+      "discuss": "",
+      "plan": "--mvp",
+      "execute": ""
+    }
+  },
+  "intel": {
+    "enabled": true
+  },
+  "project_code": "ZZZ",
+  "agent_skills": {},
+  "claude_md_path": "./.claude/CLAUDE.md"
+}

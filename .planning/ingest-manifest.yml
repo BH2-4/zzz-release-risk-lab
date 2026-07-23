@@ -1,0 +1,4 @@
+docs:
+  - path: docs/mvp-v1-spec.md
+    type: SPEC
+    precedence: 1
