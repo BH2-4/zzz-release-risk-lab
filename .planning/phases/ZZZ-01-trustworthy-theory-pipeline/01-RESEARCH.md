@@ -257,16 +257,15 @@ The implementation must retain cleanup and repeat output parent/target validatio
 
 All implementation claims in this research were verified against repository code, tests, or locked planning documents. No package, external API, legal, compliance, or product-evidence claim was inferred from model memory.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Which exact generated references will change after regeneration?**
+1. **RESOLVED: Which exact generated references will change after regeneration?**
    - What we know: the old Theory System ID is stale and must not be reused. `[VERIFIED: docs/restart-handoff-2026-07-24.md]`
-   - What's unclear: the new ID cannot be known until the approved lifecycle is regenerated.
-   - Recommendation: after regeneration, search exact old ID and run path references with `rg`, update only generated/dependent references, then rerun validation.
+   - Resolution: discover exact dependent references at execution time with `rg` after regeneration. Update only paths already declared by the plan; if any exact dependent reference appears outside that set, stop and revise the plan rather than editing an undeclared path. The new ID remains intentionally unknown until the approved lifecycle generates it.
 
-2. **How strict should `recorded-model-output` fields be in Phase 1?**
+2. **RESOLVED: How strict should `recorded-model-output` fields be in Phase 1?**
    - What we know: it must remain distinct and non-live; actual recorded replay belongs to Phase 2. `[VERIFIED: docs/mvp-v1-spec.md; 01-CONTEXT.md]`
-   - Recommendation: validate the mode and prohibit `realModelUsed: true` now; defer any new replay-specific required metadata to Phase 2 so Phase 1 does not widen scope.
+   - Resolution: preserve existing recorded-output metadata, validate the distinct non-live mode, and prohibit `realModelUsed: true`; do not add any Phase 2 replay-specific required metadata in Phase 1.
 
 ## Environment Availability
 

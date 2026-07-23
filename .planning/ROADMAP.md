@@ -25,7 +25,19 @@ The milestone first restores a trustworthy, fully green evidence/Theory Agent ba
   1. The six current Theory Agent CLI regressions pass without weakening their attack cases.
   2. A fresh deterministic-fixture run records fixture path/digest, `realModelUsed: false`, valid review lineage, and a new content-addressed Theory System ID.
   3. `npm run build`, `npm test`, and `npm run test:e2e` all pass from a clean worktree.
-**Plans**: TBD
+**Plans**: 4 plans in 4 sequential waves
+
+**Wave 1**
+- [ ] `01-01`: Closed provenance contract and domain tests
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] `01-02`: CLI filesystem boundary hardening
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] `01-03`: Authoritative CLI lifecycle regeneration
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] `01-04`: Full quality gates and closure evidence
 
 ### Phase 2: Real Evidence-Bound AI Compilation
 **Goal**: An analyst can produce one real-model compiled scenario whose facts, assumptions, theories, and provenance remain auditable.
@@ -81,7 +93,7 @@ The milestone first restores a trustworthy, fully green evidence/Theory Agent ba
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Trustworthy Theory Pipeline | 0/TBD | Ready to discuss | - |
+| 1. Trustworthy Theory Pipeline | 0/4 | Ready to execute | - |
 | 2. Real Evidence-Bound AI Compilation | 0/TBD | Not started | - |
 | 3. Hybrid Agent Society | 0/TBD | Not started | - |
 | 4. Runtime-Driven 3D Evolution | 0/TBD | Not started | - |
