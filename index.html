@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="基于公开证据与合成利益相关者的绝区零全球发行风险情景沙盘。">
+  <title>绝区零地区发行风险沙盘</title>
+  <link rel="icon" href="assets/zzz-app-icon.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-lockup">
+      <img src="assets/zzz-app-icon.jpg" alt="绝区零" class="brand-icon">
+      <div>
+        <p class="brand-kicker">NEW ERIDU RELEASE LAB · 非官方原型</p>
+        <h1>绝区零地区发行风险沙盘</h1>
+      </div>
+    </div>
+    <div class="topbar-status" aria-label="系统状态">
+      <span class="status-chip"><span class="status-dot status-dot--live"></span><strong data-testid="cycle-days">42</strong> 天周期</span>
+      <span class="status-chip"><span class="status-dot status-dot--chain"></span>Injective 1439</span>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="control-rail" aria-label="模拟参数">
+      <div class="rail-heading">
+        <div>
+          <p class="section-kicker">SCENARIO INPUT</p>
+          <h2>情景与应对</h2>
+        </div>
+        <button type="button" class="text-button" id="reset-controls">重置</button>
+      </div>
+
+      <label class="field-label" for="scenario-select">历史原型</label>
+      <select id="scenario-select" class="select-control">
+        <option value="mechanics-rollback">角色机制修复回退</option>
+        <option value="reward-gap">周年奖励期待落差</option>
+        <option value="representation">文化代表争议</option>
+      </select>
+      <div class="scenario-note">
+        <span id="scenario-evidence" class="evidence-badge evidence-badge--b">B 级</span>
+        <p id="scenario-description">长期存在的角色操作被修复后，玩家可能将其重新框定为程序不公。</p>
+      </div>
+
+      <div class="control-section">
+        <div class="control-section__title">
+          <h3>响应速度</h3>
+          <output id="delay-output">1 天</output>
+        </div>
+        <label for="delay" class="field-label">公开回应延迟</label>
+        <input id="delay" type="range" min="0" max="10" step="1" value="1">
+      </div>
+
+      <div class="control-section">
+        <div class="control-section__title">
+          <h3>响应组合</h3>
+          <span class="microcopy">0 弱 · 100 强</span>
+        </div>
+        <label class="slider-row" for="transparency">
+          <span>透明度</span><output id="transparency-output">90</output>
+        </label>
+        <input id="transparency" type="range" min="0" max="100" value="90">
+
+        <label class="slider-row" for="participation">
+          <span>玩家参与</span><output id="participation-output">55</output>
+        </label>
+        <input id="participation" type="range" min="0" max="100" value="55">
+
+        <label class="slider-row" for="restitution">
+          <span>补偿修复</span><output id="restitution-output">85</output>
+        </label>
+        <input id="restitution" type="range" min="0" max="100" value="85">
+
+        <label class="slider-row" for="localization">
+          <span>地区适配</span><output id="localization-output">70</output>
+        </label>
+        <input id="localization" type="range" min="0" max="100" value="70">
+
+        <label class="slider-row" for="corrective-action">
+          <span>纠正行动</span><output id="corrective-action-output">95</output>
+        </label>
+        <input id="corrective-action" type="range" min="0" max="100" value="95">
+      </div>
+
+      <div class="rail-footer">
+        <p><strong>125</strong> 个合成角色 · 5 层级 · 5 领域 · 5 地区</p>
+        <p>地区默认无差异，参数不会暗藏文化刻板印象。</p>
+      </div>
+    </aside>
+
+    <section class="analysis-surface">
+      <div class="surface-header">
+        <div>
+          <p class="section-kicker">RELEASE CYCLE / VERSION NEXT</p>
+          <h2 id="active-scenario-title">角色机制修复回退</h2>
+          <p data-testid="claim-type" class="claim-label">情景指数 · 不是现实概率</p>
+        </div>
+        <button type="button" id="rerun-simulation" class="primary-button">重新模拟</button>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="沙盘视图">
+        <button type="button" role="tab" aria-selected="true" aria-controls="panel-overview" id="tab-overview">总览</button>
+        <button type="button" role="tab" aria-selected="false" aria-controls="panel-groups" id="tab-groups">群体地图</button>
+        <button type="button" role="tab" aria-selected="false" aria-controls="panel-evidence" id="tab-evidence">证据库</button>
+        <button type="button" role="tab" aria-selected="false" aria-controls="panel-injective" id="tab-injective">Injective</button>
+      </div>
+
+      <section role="tabpanel" id="panel-overview" aria-labelledby="tab-overview">
+        <div class="metric-strip">
+          <article class="metric-card metric-card--baseline">
+            <p>沉默方案峰值</p>
+            <strong id="baseline-peak-risk">--</strong>
+            <span>第 8 天回应</span>
+          </article>
+          <article class="metric-card metric-card--candidate">
+            <p>当前方案峰值</p>
+            <strong id="candidate-peak-risk">--</strong>
+            <span id="peak-delta">--</span>
+          </article>
+          <article class="metric-card">
+            <p>第 42 天残余</p>
+            <strong data-testid="candidate-final-risk" id="candidate-final-risk">--</strong>
+            <span id="final-delta">--</span>
+          </article>
+          <article class="metric-card metric-card--interval">
+            <p>100 次末值区间</p>
+            <strong id="uncertainty-range">--</strong>
+            <span>P10–P90</span>
+          </article>
+        </div>
+
+        <div class="overview-grid">
+          <section class="panel chart-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="section-kicker">42-DAY TRACE</p>
+                <h3>响应策略如何改变风险曲线</h3>
+              </div>
+              <div class="legend" aria-label="图例">
+                <span><i class="legend-line legend-line--baseline"></i>沉默</span>
+                <span><i class="legend-line legend-line--candidate"></i>当前方案</span>
+              </div>
+            </div>
+            <div id="risk-chart" class="risk-chart" role="img" aria-label="42 天沉默方案与当前响应方案风险指数折线图"></div>
+            <div class="chart-axis-labels"><span>第 1 天</span><span id="event-day-label">事件日</span><span>第 42 天</span></div>
+          </section>
+
+          <section class="panel driver-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="section-kicker">RESIDUAL PRESSURE</p>
+                <h3>第 42 天领域残余</h3>
+              </div>
+            </div>
+            <div id="domain-bars" class="bar-list"></div>
+          </section>
+        </div>
+
+        <section class="decision-band">
+          <div>
+            <p class="section-kicker">DECISION NOTE</p>
+            <h3 id="decision-title">快速纠正优于沉默，但不能消除全部风险</h3>
+          </div>
+          <p id="decision-copy">保持解释、纠正和补偿组合；优先观察互联网与社会领域的二次扩散。</p>
+          <div class="risk-band-display">
+            <span>链上风险档位</span>
+            <strong id="risk-band">3 / 5</strong>
+          </div>
+        </section>
+      </section>
+
+      <section role="tabpanel" id="panel-groups" aria-labelledby="tab-groups" hidden>
+        <div class="group-grid">
+          <section class="panel">
+            <div class="panel-heading"><div><p class="section-kicker">BY LEVEL</p><h3>五层级残余压力</h3></div></div>
+            <div id="level-bars" class="bar-list"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-heading"><div><p class="section-kicker">BY REGION</p><h3>五地区情景指数</h3></div></div>
+            <div id="region-bars" class="bar-list"></div>
+          </section>
+        </div>
+        <div class="method-note">
+          <strong>读图边界</strong>
+          <p>地区差异只来自你显式输入的情景系数；当前默认全部为 1.0。图上的轻微差异来自合成角色参数，而非地区画像。</p>
+        </div>
+      </section>
+
+      <section role="tabpanel" id="panel-evidence" aria-labelledby="tab-evidence" hidden>
+        <div class="evidence-summary">
+          <div><strong>6</strong><span>A 级理论来源</span></div>
+          <div><strong>1</strong><span>B 级历史原型</span></div>
+          <div><strong>2</strong><span>C 级研究夹具</span></div>
+          <div><strong>0</strong><span>现实概率声明</span></div>
+        </div>
+        <section class="evidence-section">
+          <div class="panel-heading"><div><p class="section-kicker">ACADEMIC MAP</p><h3>理论如何进入模型</h3></div></div>
+          <div class="evidence-table-wrap">
+            <table class="evidence-table">
+              <thead><tr><th>理论</th><th>模型构件</th><th>来源</th></tr></thead>
+              <tbody>
+                <tr><td>集体行为阈值</td><td>阈值、影响力、级联</td><td><a href="https://doi.org/10.1086/226707" target="_blank" rel="noreferrer">Threshold Models of Collective Behavior</a></td></tr>
+                <tr><td>框架理论</td><td>五领域触发向量</td><td><a href="https://doi.org/10.1111/j.1460-2466.1993.tb01304.x" target="_blank" rel="noreferrer">Framing</a></td></tr>
+                <tr><td>情境危机沟通</td><td>责任、历史、响应组合</td><td><a href="https://doi.org/10.1057/palgrave.crr.1550049" target="_blank" rel="noreferrer">Situational Crisis Communication Theory</a></td></tr>
+                <tr><td>连接行动</td><td>网络动量、跨区溢出</td><td><a href="https://doi.org/10.1080/1369118X.2012.670661" target="_blank" rel="noreferrer">The Logic of Connective Action</a></td></tr>
+                <tr><td>相对剥夺</td><td>期待差距、公平比较</td><td><a href="https://doi.org/10.1177/1088868311430825" target="_blank" rel="noreferrer">Relative Deprivation</a></td></tr>
+                <tr><td>利益相关者显著性</td><td>影响力与响应优先级</td><td><a href="https://doi.org/10.2307/259247" target="_blank" rel="noreferrer">Stakeholder Identification and Salience</a></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+        <section class="case-ledger">
+          <article><span class="evidence-badge evidence-badge--b">B 级 · 专业媒体转述</span><h3>角色机制修复回退</h3><p>可用于演示程序公平、回退与补偿策略；尚缺稳定可访问的官方公告 URL。</p></article>
+          <article><span class="evidence-badge evidence-badge--c">C 级 · 待复核</span><h3>周年奖励期待落差</h3><p>仅作为流程夹具；候选报道已重定向，不能支撑现实结论。</p></article>
+          <article><span class="evidence-badge evidence-badge--c">C 级 · 待复核</span><h3>文化代表争议</h3><p>仅用于讨论跨文化框架；候选正文受访问限制，尚无公司正式回应。</p></article>
+        </section>
+      </section>
+
+      <section role="tabpanel" id="panel-injective" aria-labelledby="tab-injective" hidden>
+        <div class="chain-layout">
+          <section class="chain-main">
+            <div class="chain-heading">
+              <div>
+                <p class="section-kicker">ON-CHAIN AUDIT TRAIL</p>
+                <h3>Injective EVM Testnet</h3>
+              </div>
+              <span class="network-pill">Chain ID 1439</span>
+            </div>
+            <p class="chain-intro">把本次情景参数的 SHA-256 哈希和 1–5 风险档位写入测试网事件。合约只接收并即时退回测试 INJ，不保存私钥、不构建竞猜市场。</p>
+
+            <div class="chain-steps">
+              <div class="chain-step"><span>01</span><div><strong>连接钱包</strong><p>切换或添加 Injective EVM Testnet</p></div></div>
+              <div class="chain-step"><span>02</span><div><strong>部署 / 填写合约</strong><p>由钱包签署部署交易，或使用已部署地址</p></div></div>
+              <div class="chain-step"><span>03</span><div><strong>提交风险承诺</strong><p>链上记录情景哈希、档位和验证脉冲</p></div></div>
+            </div>
+
+            <div class="wallet-actions">
+              <button type="button" class="primary-button" data-testid="connect-wallet" id="connect-wallet">连接 MetaMask</button>
+              <button type="button" class="secondary-button" id="deploy-contract" disabled>部署测试合约</button>
+            </div>
+            <p data-testid="wallet-status" id="wallet-status" class="wallet-status" aria-live="polite">尚未连接钱包</p>
+
+            <label class="field-label" for="contract-address">RiskCommitment 合约地址</label>
+            <input id="contract-address" class="text-input" type="text" inputmode="text" autocomplete="off" placeholder="0x…" aria-describedby="contract-help">
+            <p id="contract-help" class="microcopy">部署完成后填入地址；提交按钮只接受 40 位 EVM 地址。</p>
+
+            <div class="commit-row">
+              <label for="stake-amount"><span>验证脉冲</span>
+                <select id="stake-amount" class="select-control select-control--compact">
+                  <option value="0.001">0.001 test INJ</option>
+                  <option value="0.01" selected>0.01 test INJ</option>
+                  <option value="0.1">0.1 test INJ</option>
+                </select>
+              </label>
+              <button type="button" class="primary-button" id="commit-risk" disabled>提交链上记录</button>
+            </div>
+            <div id="transaction-result" class="transaction-result" aria-live="polite"></div>
+          </section>
+
+          <aside class="chain-proof">
+            <p class="section-kicker">COMMIT PREVIEW</p>
+            <dl>
+              <div><dt>网络</dt><dd>Injective EVM Testnet</dd></div>
+              <div><dt>风险档位</dt><dd id="commit-risk-band">3 / 5</dd></div>
+              <div><dt>情景哈希</dt><dd id="scenario-hash">计算中…</dd></div>
+              <div><dt>方法</dt><dd><code>commitRisk(bytes32,uint8)</code></dd></div>
+              <div><dt>测试 INJ</dt><dd>同交易即时退回</dd></div>
+            </dl>
+            <a href="https://testnet.blockscout.injective.network/" target="_blank" rel="noreferrer" class="external-link">打开测试网浏览器</a>
+          </aside>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="page-footer">
+    <p>公开证据 + 合成角色 + 可复现实验。项目与米哈游、HoYoverse、Injective 无隶属关系。</p>
+    <a href="research/model-card.md">查看模型卡</a>
+  </footer>
+
+  <script src="src/model.js"></script>
+  <script src="src/injective.js"></script>
+  <script src="src/contract-artifact.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

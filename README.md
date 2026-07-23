@@ -1,0 +1,68 @@
+# ZZZ Release Risk Lab / 绝区零地区发行风险沙盘
+
+> ProgramE · Round-0 已完成 · 非官方研究原型
+
+一个用社会学理论、公开历史案例和合成利益相关者，对《绝区零》下一个 42 天全球发行周期进行情景压力测试的 MVP。
+
+## 一句话
+
+它不回答“下个版本会不会爆发公关危机”，而是回答：
+
+> 如果同一个发行决策同时触发公平感、群体身份、文化代表和社交网络扩散，哪些地区与群体的风险会先上升，哪种发行应对最可能缓解它？
+
+## MVP 边界
+
+- 合成群体不是真实玩家样本，不具有人口统计代表性。
+- 输出是情景风险、相对比较与参数敏感性，不是现实世界概率预测。
+- 不对国家、族群或文化群体贴本质化标签；地区参数必须有公开证据或显式标记为夹具。
+- Injective 只使用测试网与无经济价值的测试代币；不保存私钥，不实现现金或投机市场。
+- 项目与米哈游、HoYoverse 和 Injective 无隶属或授权关系。
+
+## 双赛道验收
+
+- 米哈游：可现场运行，咬住 42 天、多语同步与地区差异，只用公开数据。
+- Injective：必须真实集成测试网或主网；最终 Demo 不能只有本地假代币。
+
+## 开发状态
+
+- [x] 旧方向归档
+- [x] 学术映射与分级历史危机样本
+- [x] 百人级合成利益相关者
+- [x] 42 天多层扩散引擎
+- [x] Round-0 快速实验与一代校准
+- [x] 现场可操作界面（桌面与移动端 E2E 已通过）
+- [ ] Injective 测试网承诺记录
+- [ ] 公开 GitHub 仓库
+
+## 提交材料
+
+- [米哈游赛道一页说明](docs/one-page.md)
+- [3-5 分钟 Pitch](docs/pitch.md)
+- [系统架构与信任边界](docs/architecture.md)
+- [Injective 测试网部署手册](docs/deployment.md)
+- [安全说明](SECURITY.md)
+
+## 历史输入
+
+- [AdventureX 2026 赛道表](/Users/arco/Documents/advx26/AdventureX-2026-赛道表.md)
+- [旧方向归档](../archive/README.md)
+- [ProgramB 历史赛题知识库](../programB/README.md)
+
+## 当前可复现内容
+
+```bash
+npm install
+npm test
+npm run experiment
+npm run test:e2e
+npm start
+```
+
+浏览器打开 `http://127.0.0.1:4173/`。
+
+- [Round-0 实验记录](experiments/round-0.md)
+- [研究库与证据等级](research/README.md)
+- `src/model.js`：42 天多层情景模拟与集合区间。
+- `src/injective.js`：Injective EVM Testnet 配置、钱包连接与无私钥交易编码。
+- `contracts/RiskCommitment.sol`：可编译的最小测试网承诺合约，尚未部署。
+- `index.html`：可现场操作的情景比较、证据审计与测试网提交界面。

@@ -1,0 +1,23 @@
+{
+  "name": "zzz-release-risk-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Evidence-bounded social simulation for Zenless Zone Zero regional publishing risk.",
+  "scripts": {
+    "build": "npm run build:contract",
+    "build:contract": "node scripts/build-contract.js",
+    "experiment": "node scripts/run-round0.js",
+    "start": "python3 -m http.server 4173 --bind 127.0.0.1",
+    "test": "node --test tests/*.test.js",
+    "test:coverage": "node --test --experimental-test-coverage tests/*.test.js",
+    "test:e2e": "playwright test"
+  },
+  "license": "MIT",
+  "overrides": {
+    "tmp": "0.2.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "solc": "^0.8.30"
+  }
+}
