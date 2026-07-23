@@ -1,6 +1,6 @@
 # ZZZ Release Risk Lab / 绝区零地区发行风险沙盘
 
-> ProgramE · Round-0 已完成 · 非官方研究原型
+> ProgramE · 3D 演化展示 Beta 0.2 · 非官方研究原型
 
 一个用社会学理论、公开历史案例和合成利益相关者，对《绝区零》下一个 42 天全球发行周期进行情景压力测试的 MVP。
 
@@ -31,9 +31,10 @@
 - [x] 42 天多层扩散引擎
 - [x] Round-0 快速实验与一代校准
 - [x] 42 天逐 Agent 可视回放数据与 Reverse 空值契约
+- [x] 独立 3D 演化沙盘（125 个棋子、42 天播放、策略差值与 Agent 下钻）
 - [x] 现场可操作界面（桌面与移动端 E2E 已通过）
 - [ ] Injective 测试网承诺记录
-- [ ] 公开 GitHub 仓库
+- [x] 公开 GitHub 仓库
 
 ## 提交材料
 
@@ -43,6 +44,8 @@
 - [Beta 0.1 完整讲稿](roadshow/beta0.1/speaker-notes.md)
 - [系统架构与信任边界](docs/architecture.md)
 - [3D 前端可视化数据契约](docs/visualization-data-contract.md)
+- [3D 引擎选型记录](docs/3d-engine-decision.md)
+- [OpenGSD 接入边界](docs/opengsd-adoption.md)
 - [Injective 测试网部署手册](docs/deployment.md)
 - [安全说明](SECURITY.md)
 
@@ -63,13 +66,19 @@ npm run test:e2e
 npm start
 ```
 
-浏览器打开 `http://127.0.0.1:4173/`。
+浏览器打开：
+
+- `http://127.0.0.1:4173/`：参数实验、证据库与 Injective 工作台。
+- `http://127.0.0.1:4173/simulation/`：独立的 42 天 3D 演化展示；不加载路演目录。
 
 - [Round-0 实验记录](experiments/round-0.md)
 - [研究库与证据等级](research/README.md)
 - `src/model.js`：42 天多层情景模拟与集合区间。
 - `src/visualization-data.js`：渲染器无关的棋盘定位、正面/Reverse 通道与策略差值数据。
-- `experiments/output/visual-data-beta0.1.json`：供后续 2D/3D 前端直接消费的确定性数据样本。
+- `src/visualization-bundle.js`：浏览器可逐日随机访问的紧凑整数帧编码与解码器。
+- `experiments/output/visual-data-beta0.2.json`：由 3D 页面直接消费的确定性演化数据包。
+- `experiments/output/visual-data-manifest.json`：数据包字节长度、SHA-256 与能力边界清单。
+- `simulation/`：Three.js 运行态演化沙盘，不属于 `roadshow/beta0.1`。
 - `src/injective.js`：Injective EVM Testnet 配置、钱包连接与无私钥交易编码。
 - `contracts/RiskCommitment.sol`：可编译的最小测试网承诺合约，尚未部署。
 - `index.html`：可现场操作的情景比较、证据审计与测试网提交界面。

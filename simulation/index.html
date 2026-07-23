@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="绝区零地区发行风险的 42 天 3D 社会演化沙盘。">
+  <title>发行影响演化沙盘 · 3D</title>
+  <link rel="icon" href="../assets/zzz-app-icon.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="styles.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "../node_modules/three/build/three.module.js",
+        "three/addons/": "../node_modules/three/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="simulation-app" id="simulation-app" data-simulation-ready="false">
+    <header class="simulation-topbar">
+      <div class="simulation-brand">
+        <img src="../assets/zzz-app-icon.jpg" alt="绝区零" width="36" height="36">
+        <div>
+          <p>NEW ERIDU RELEASE LAB · 非官方原型</p>
+          <h1>发行影响演化沙盘</h1>
+        </div>
+      </div>
+
+      <div class="view-switch" role="group" aria-label="策略视图">
+        <button type="button" data-view="baseline" data-testid="view-baseline" aria-pressed="false">沉默</button>
+        <button type="button" data-view="candidate" data-testid="view-candidate" aria-pressed="true">响应</button>
+        <button type="button" data-view="delta" data-testid="view-delta" aria-pressed="false">差值</button>
+      </div>
+
+      <div class="topbar-tools">
+        <span class="data-status" data-testid="simulation-data-status" aria-live="polite">
+          <span class="data-status__dot"></span><span>载入中</span>
+        </span>
+        <button type="button" class="icon-button" id="reset-camera" aria-label="重置相机" title="重置相机"></button>
+        <button type="button" class="icon-button inspector-toggle" id="toggle-inspector" aria-label="打开检视面板" title="检视 Agent"></button>
+      </div>
+    </header>
+
+    <main class="simulation-workspace">
+      <section class="scene-surface" aria-label="125 个合成 Agent 的三维演化棋盘">
+        <div id="canvas-host" class="canvas-host">
+          <canvas id="simulation-canvas" aria-label="三维演化棋盘"></canvas>
+          <div id="axis-label-layer" class="axis-label-layer" aria-hidden="true"></div>
+
+          <div class="scene-readout" aria-live="polite">
+            <p id="phase-label">发布前</p>
+            <div>
+              <strong data-testid="aggregate-risk" id="aggregate-risk">--</strong>
+              <span id="aggregate-label">响应方案指数</span>
+            </div>
+          </div>
+
+          <div class="scene-legend" aria-label="视觉图例">
+            <span><i class="legend-swatch legend-swatch--stable"></i>稳定</span>
+            <span><i class="legend-swatch legend-swatch--pressure"></i>压力</span>
+            <span><i class="legend-swatch legend-swatch--reverse"></i>Reverse 未接入</span>
+          </div>
+
+          <div class="loading-state" id="loading-state" role="status">
+            <span></span>
+            <p>加载演化帧</p>
+          </div>
+
+          <div class="fatal-state" id="fatal-state" hidden>
+            <strong>3D 场景无法启动</strong>
+            <p id="fatal-message">请检查本地服务与数据文件。</p>
+          </div>
+        </div>
+      </section>
+
+      <aside class="simulation-inspector" id="simulation-inspector" aria-label="Agent 检视" data-open="false">
+        <header class="inspector-header">
+          <div>
+            <p>AGENT INSPECTOR</p>
+            <h2 data-testid="selected-agent-id" id="selected-agent-id">未选择</h2>
+          </div>
+          <button type="button" class="icon-button" id="close-inspector" aria-label="关闭检视面板" title="关闭"></button>
+        </header>
+
+        <div class="identity-grid">
+          <div><span>层级</span><strong id="agent-level">--</strong></div>
+          <div><span>领域</span><strong id="agent-domain">--</strong></div>
+          <div><span>地区</span><strong id="agent-region">--</strong></div>
+        </div>
+
+        <section class="inspector-section">
+          <div class="inspector-section__heading">
+            <h3>当前状态</h3><span id="agent-day">第 01 天</span>
+          </div>
+          <dl class="metric-list">
+            <div><dt>风险</dt><dd id="agent-risk">--</dd></div>
+            <div><dt>压力</dt><dd id="agent-pressure">--</dd></div>
+            <div><dt>网络放大</dt><dd id="agent-network">--</dd></div>
+            <div><dt>响应缓冲</dt><dd id="agent-response">--</dd></div>
+            <div><dt>完整度</dt><dd id="agent-integrity">--</dd></div>
+          </dl>
+        </section>
+
+        <section class="inspector-section">
+          <div class="inspector-section__heading"><h3>主要驱动</h3><span>模型贡献</span></div>
+          <div class="driver-list" id="driver-list"></div>
+        </section>
+
+        <section class="reverse-boundary">
+          <div><span class="reverse-mark"></span><strong>Reverse</strong></div>
+          <p>声量 / 热度不可用</p>
+        </section>
+      </aside>
+    </main>
+
+    <footer class="timeline-dock">
+      <button type="button" class="icon-button playback-button" id="playback-toggle" data-testid="playback-toggle" aria-label="播放" title="播放"></button>
+
+      <div class="day-counter">
+        <span>DAY</span>
+        <strong data-testid="simulation-day" id="simulation-day">01 / 42</strong>
+      </div>
+
+      <div class="timeline-control">
+        <div class="timeline-events" id="timeline-events" aria-hidden="true"></div>
+        <label for="timeline-range" class="visually-hidden">发行周期日期</label>
+        <input id="timeline-range" type="range" min="1" max="42" step="0.01" value="1">
+        <div class="timeline-labels"><span>01</span><span>42</span></div>
+      </div>
+
+      <div class="active-event" data-testid="active-event" id="active-event">常态波动</div>
+
+      <label class="speed-control" for="playback-speed">
+        <span>速率</span>
+        <select id="playback-speed">
+          <option value="0.5">0.5x</option>
+          <option value="1" selected>1x</option>
+          <option value="2">2x</option>
+          <option value="4">4x</option>
+        </select>
+      </label>
+    </footer>
+  </div>
+
+  <noscript>该页面需要 JavaScript 与 WebGL。</noscript>
+  <script src="../src/visualization-bundle.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

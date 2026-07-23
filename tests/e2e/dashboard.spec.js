@@ -152,3 +152,58 @@ test('pitch deck fits target viewports and supports keyboard navigation', async 
   await expect(page.locator('#slide-8 [data-reveal]').last()).toHaveCSS('opacity', '1')
   await page.screenshot({ path: 'artifacts/screenshots/pitch-landscape-phone.png' })
 })
+
+test('standalone 3D simulation renders and plays the full 42-day evolution', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'desktop interaction and pixel audit')
+  await page.goto('/simulation/')
+
+  await expect(page.getByRole('heading', { name: '发行影响演化沙盘' })).toBeVisible()
+  await expect(page.getByTestId('simulation-data-status')).toHaveText('数据已校验')
+  await expect(page.getByTestId('simulation-day')).toHaveText('01 / 42')
+  const canvas = page.locator('#simulation-canvas')
+  await expect(canvas).toBeVisible()
+  const box = await canvas.boundingBox()
+  expect(box.width).toBeGreaterThan(700)
+  expect(box.height).toBeGreaterThan(420)
+
+  const pixelStats = await page.evaluate(() => window.__simulationDiagnostics.pixelStats())
+  expect(pixelStats.opaqueRatio).toBeGreaterThan(0.95)
+  expect(pixelStats.colorBuckets).toBeGreaterThan(12)
+  expect(pixelStats.luminanceRange).toBeGreaterThan(25)
+  const requests = await page.evaluate(() => performance.getEntriesByType('resource').map((entry) => entry.name))
+  expect(requests.some((url) => url.includes('/roadshow/'))).toBe(false)
+
+  const point = await page.evaluate(() => window.__simulationDiagnostics.agentScreenPoint('S063'))
+  await page.mouse.click(point.x, point.y)
+  await expect(page.getByTestId('selected-agent-id')).toHaveText('S063')
+
+  await page.getByTestId('playback-toggle').click()
+  await expect(page.getByTestId('simulation-day')).not.toHaveText('01 / 42', { timeout: 5000 })
+  await page.getByTestId('playback-toggle').click()
+
+  await page.locator('#timeline-range').evaluate((element) => {
+    element.value = '25'
+    element.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  await expect(page.getByTestId('simulation-day')).toHaveText('25 / 42')
+  await expect(page.getByTestId('active-event')).toContainText('周年奖励期待落差')
+  await page.getByTestId('view-delta').click()
+  await expect(page.getByTestId('aggregate-risk')).toContainText('-')
+  await page.screenshot({ path: 'artifacts/screenshots/simulation-3d-desktop.png', fullPage: true })
+})
+
+test('standalone 3D simulation fits the mobile viewport', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile', 'mobile-only 3D layout assertion')
+  await page.goto('/simulation/')
+  await expect(page.getByTestId('simulation-data-status')).toHaveText('数据已校验')
+  await expect(page.locator('#simulation-canvas')).toBeVisible()
+
+  const dimensions = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }))
+  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth)
+  const pixelStats = await page.evaluate(() => window.__simulationDiagnostics.pixelStats())
+  expect(pixelStats.colorBuckets).toBeGreaterThan(8)
+  await page.screenshot({ path: 'artifacts/screenshots/simulation-3d-mobile.png', fullPage: true })
+})

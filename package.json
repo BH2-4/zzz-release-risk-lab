@@ -7,7 +7,8 @@
     "build": "npm run build:contract",
     "build:contract": "node scripts/build-contract.js",
     "experiment": "node scripts/run-round0.js",
-    "experiment:visual": "node scripts/run-visual-replay.js",
+    "experiment:visual": "node scripts/run-visual-bundle.js",
+    "experiment:visual:v1": "node scripts/run-visual-replay.js",
     "start": "python3 -m http.server 4173 --bind 127.0.0.1",
     "test": "node --test tests/*.test.js",
     "test:coverage": "node --test --experimental-test-coverage tests/*.test.js",
@@ -20,5 +21,9 @@
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "solc": "^0.8.30"
+  },
+  "dependencies": {
+    "lucide": "1.26.0",
+    "three": "0.185.1"
   }
 }
