@@ -322,35 +322,50 @@ function interval(values) {
   return { p10: quantile(values, 0.1), p50: quantile(values, 0.5), p90: quantile(values, 0.9) }
 }
 
-function runEnsemble({ scenario, response, runs = 30, populationSize = 125, seed = 1 }) {
+function validateEnsembleRuns(runs) {
   if (!Number.isInteger(runs) || runs < 3 || runs > 500) {
     throw new TypeError('runs must be an integer between 3 and 500')
   }
-  const ensembleRandom = createRandom(seed ^ 0xa11ce)
-  const outcomes = Array.from({ length: runs }, (_, index) => {
-    const runSeed = seed + index * 7919
-    const intensityFactor = 0.82 + ensembleRandom() * 0.36
-    const responseFactor = 0.88 + ensembleRandom() * 0.24
-    const variantScenario = {
+}
+
+function createEnsembleCase({ scenario, ensembleRandom, seed, index }) {
+  const runSeed = seed + index * 7919
+  const intensityFactor = 0.82 + ensembleRandom() * 0.36
+  const responseFactor = 0.88 + ensembleRandom() * 0.24
+  return {
+    runSeed,
+    responseFactor,
+    scenario: {
       ...scenario,
       priorCrisis: clamp(scenario.priorCrisis * intensityFactor),
       triggers: Object.fromEntries(
         DOMAINS.map((domain) => [domain, clamp(scenario.triggers[domain] * intensityFactor)]),
       ),
-    }
-    const variantResponse = {
-      ...response,
-      transparency: clamp((response.transparency || 0) * responseFactor),
-      participation: clamp((response.participation || 0) * responseFactor),
-      restitution: clamp((response.restitution || 0) * responseFactor),
-      localization: clamp((response.localization || 0) * responseFactor),
-      correctiveAction: clamp((response.correctiveAction || 0) * responseFactor),
-    }
+    },
+  }
+}
+
+function scaleResponse(response = {}, factor) {
+  return {
+    ...response,
+    transparency: clamp((response.transparency || 0) * factor),
+    participation: clamp((response.participation || 0) * factor),
+    restitution: clamp((response.restitution || 0) * factor),
+    localization: clamp((response.localization || 0) * factor),
+    correctiveAction: clamp((response.correctiveAction || 0) * factor),
+  }
+}
+
+function runEnsemble({ scenario, response, runs = 30, populationSize = 125, seed = 1 }) {
+  validateEnsembleRuns(runs)
+  const ensembleRandom = createRandom(seed ^ 0xa11ce)
+  const outcomes = Array.from({ length: runs }, (_, index) => {
+    const ensembleCase = createEnsembleCase({ scenario, ensembleRandom, seed, index })
     return runSimulation({
-      scenario: variantScenario,
-      response: variantResponse,
-      population: createPopulation({ size: populationSize, seed: runSeed }),
-      seed: runSeed + 17,
+      scenario: ensembleCase.scenario,
+      response: scaleResponse(response, ensembleCase.responseFactor),
+      population: createPopulation({ size: populationSize, seed: ensembleCase.runSeed }),
+      seed: ensembleCase.runSeed + 17,
     })
   })
   return {
@@ -358,6 +373,124 @@ function runEnsemble({ scenario, response, runs = 30, populationSize = 125, seed
     peakRisk: interval(outcomes.map((outcome) => outcome.peakRisk)),
     finalRisk: interval(outcomes.map((outcome) => outcome.finalRisk)),
     disclaimer: '区间表示模型假设下的情景指数离散度，不是现实概率或真实人群预测。',
+  }
+}
+
+function deltaInterval(outcomes, selectBaseline, selectCandidate) {
+  return interval(outcomes.map((outcome) => round(
+    selectCandidate(outcome.candidate) - selectBaseline(outcome.baseline),
+  )))
+}
+
+function createSegmentIntervals(outcomes, key, order) {
+  const field = `by${key[0].toUpperCase()}${key.slice(1)}`
+  const strategyIntervals = (strategy) => Object.fromEntries(order.map((name) => [
+    name,
+    interval(outcomes.map((outcome) => outcome[strategy][field][name])),
+  ]))
+  return {
+    order,
+    baseline: strategyIntervals('baseline'),
+    candidate: strategyIntervals('candidate'),
+    delta: Object.fromEntries(order.map((name) => [
+      name,
+      deltaInterval(
+        outcomes,
+        (baseline) => baseline[field][name],
+        (candidate) => candidate[field][name],
+      ),
+    ])),
+  }
+}
+
+function runPairedEnsemble({
+  scenario,
+  baselineResponse,
+  candidateResponse,
+  runs = 30,
+  populationSize = 125,
+  seed = 1,
+}) {
+  validateEnsembleRuns(runs)
+  const baselineResponseId = baselineResponse?.id || 'unnamed-baseline'
+  const candidateResponseId = candidateResponse?.id || 'unnamed-candidate'
+  if (baselineResponseId === candidateResponseId) {
+    throw new TypeError('Paired ensemble requires distinct baseline and candidate response strategies')
+  }
+
+  const ensembleRandom = createRandom(seed ^ 0xa11ce)
+  const outcomes = Array.from({ length: runs }, (_, index) => {
+    const ensembleCase = createEnsembleCase({ scenario, ensembleRandom, seed, index })
+    const population = createPopulation({ size: populationSize, seed: ensembleCase.runSeed })
+    const simulationSeed = ensembleCase.runSeed + 17
+    return {
+      baseline: runSimulation({
+        scenario: ensembleCase.scenario,
+        response: scaleResponse(baselineResponse, ensembleCase.responseFactor),
+        population,
+        seed: simulationSeed,
+      }),
+      candidate: runSimulation({
+        scenario: ensembleCase.scenario,
+        response: scaleResponse(candidateResponse, ensembleCase.responseFactor),
+        population,
+        seed: simulationSeed,
+      }),
+    }
+  })
+
+  const timeline = Array.from({ length: CYCLE_DAYS }, (_, index) => ({
+    day: index + 1,
+    baseline: { risk: interval(outcomes.map((outcome) => outcome.baseline.timeline[index].risk)) },
+    candidate: { risk: interval(outcomes.map((outcome) => outcome.candidate.timeline[index].risk)) },
+    delta: {
+      risk: deltaInterval(
+        outcomes,
+        (baseline) => baseline.timeline[index].risk,
+        (candidate) => candidate.timeline[index].risk,
+      ),
+    },
+  }))
+
+  return {
+    schemaVersion: 'paired-ensemble/1.0',
+    claimType: 'scenario-index',
+    scenarioId: scenario.id,
+    runs,
+    cycleDays: CYCLE_DAYS,
+    populationSize,
+    strategies: { baseline: baselineResponseId, candidate: candidateResponseId },
+    design: {
+      pairing: 'shared-scenario-population-and-simulation-seed',
+      sampling: 'seeded-uniform-bounded-perturbation',
+      baseSeed: seed,
+      scenarioIntensityRange: [0.82, 1.18],
+      responseEffectivenessRange: [0.88, 1.12],
+      populationSeedStride: 7919,
+      simulationSeedOffset: 17,
+    },
+    timeline,
+    outcomes: {
+      baseline: {
+        peakRisk: interval(outcomes.map((outcome) => outcome.baseline.peakRisk)),
+        finalRisk: interval(outcomes.map((outcome) => outcome.baseline.finalRisk)),
+      },
+      candidate: {
+        peakRisk: interval(outcomes.map((outcome) => outcome.candidate.peakRisk)),
+        finalRisk: interval(outcomes.map((outcome) => outcome.candidate.finalRisk)),
+      },
+      delta: {
+        peakRisk: deltaInterval(outcomes, (baseline) => baseline.peakRisk, (candidate) => candidate.peakRisk),
+        finalRisk: deltaInterval(outcomes, (baseline) => baseline.finalRisk, (candidate) => candidate.finalRisk),
+      },
+    },
+    segments: {
+      finalDay: CYCLE_DAYS,
+      level: createSegmentIntervals(outcomes, 'level', LEVELS),
+      domain: createSegmentIntervals(outcomes, 'domain', DOMAINS),
+      region: createSegmentIntervals(outcomes, 'region', REGIONS),
+    },
+    disclaimer: '区间表示有界模型假设扰动下的情景指数敏感性，不是现实概率、统计置信区间或真实人群预测。',
   }
 }
 
@@ -388,6 +521,7 @@ const modelApi = {
   createPopulation,
   populationFingerprint,
   runEnsemble,
+  runPairedEnsemble,
   runSimulation,
   runSimulationTrace,
   validateScenario,

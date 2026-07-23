@@ -8,6 +8,7 @@ const {
   createPopulation,
   populationFingerprint,
   runEnsemble,
+  runPairedEnsemble,
   runSimulation,
   runSimulationTrace,
   validateScenario,
@@ -280,6 +281,57 @@ test('runEnsemble reports an uncertainty interval instead of a single probabilit
   assert.ok(result.peakRisk.p50 <= result.peakRisk.p90)
   assert.ok(result.peakRisk.p90 - result.peakRisk.p10 >= 2)
   assert.match(result.disclaimer, /不是现实概率/)
+})
+
+test('runPairedEnsemble exposes aligned daily and final-segment sensitivity bands', () => {
+  const options = {
+    scenario: rewardScenario,
+    baselineResponse: silence,
+    candidateResponse: correctiveResponse,
+    runs: 12,
+    populationSize: 125,
+    seed: 41,
+  }
+  const result = runPairedEnsemble(options)
+  const replay = runPairedEnsemble(options)
+
+  assert.deepEqual(result, replay)
+  assert.equal(result.schemaVersion, 'paired-ensemble/1.0')
+  assert.equal(result.runs, 12)
+  assert.equal(result.timeline.length, 42)
+  assert.equal(result.timeline[0].day, 1)
+  assert.equal(result.timeline.at(-1).day, 42)
+  assert.deepEqual(result.timeline[0].delta.risk, { p10: 0, p50: 0, p90: 0 })
+  assert.ok(result.timeline.at(-1).delta.risk.p50 < 0)
+  assert.ok(result.outcomes.delta.finalRisk.p50 < 0)
+  assert.deepEqual(result.segments.level.order, ['individual', 'group', 'region', 'country', 'international'])
+  assert.equal(Object.keys(result.segments.domain.candidate).length, 5)
+  assert.equal(Object.keys(result.segments.region.delta).length, 5)
+  assert.equal(result.design.pairing, 'shared-scenario-population-and-simulation-seed')
+  assert.equal(Object.hasOwn(result, 'rawRuns'), false)
+
+  for (const frame of result.timeline) {
+    for (const view of ['baseline', 'candidate', 'delta']) {
+      const interval = frame[view].risk
+      assert.ok(interval.p10 <= interval.p50)
+      assert.ok(interval.p50 <= interval.p90)
+    }
+  }
+})
+
+test('runPairedEnsemble validates run count and distinct strategy inputs', () => {
+  const base = {
+    scenario: rewardScenario,
+    baselineResponse: silence,
+    candidateResponse: correctiveResponse,
+    populationSize: 125,
+    seed: 41,
+  }
+  assert.throws(() => runPairedEnsemble({ ...base, runs: 2 }), /runs/i)
+  assert.throws(
+    () => runPairedEnsemble({ ...base, runs: 12, candidateResponse: silence }),
+    /strategy|response/i,
+  )
 })
 
 test('runEnsemble rejects too few or excessive runs', () => {

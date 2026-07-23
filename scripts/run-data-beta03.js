@@ -4,19 +4,23 @@ const crypto = require('node:crypto')
 const fs = require('node:fs')
 const path = require('node:path')
 
-const { createPopulation, runSimulationTrace } = require('../src/model.js')
-const { createVisualComparison } = require('../src/visualization-data.js')
+const { createPopulation, runPairedEnsemble, runSimulationTrace } = require('../src/model.js')
+const { createSensitivityBundle } = require('../src/sensitivity-data.js')
 const { createVisualBundle } = require('../src/visualization-bundle.js')
+const { createVisualComparison } = require('../src/visualization-data.js')
 const {
+  ENSEMBLE_RUNS,
+  ENSEMBLE_SEED,
   POPULATION_SEED,
   SIMULATION_SEED,
   baselineResponse,
   candidateResponse,
+  evidence,
   scenario,
-} = require('../experiments/fixtures/reward-gap.js')
+} = require('../experiments/fixtures/mechanics-rollback.js')
 
-const ARTIFACT_FILENAME = 'visual-data-beta0.2.json'
-const MANIFEST_FILENAME = 'visual-data-beta0.2-manifest.json'
+const ARTIFACT_FILENAME = 'visual-data-beta0.3.json'
+const MANIFEST_FILENAME = 'visual-data-manifest.json'
 
 function createArtifact() {
   const population = createPopulation({ size: 125, seed: POPULATION_SEED })
@@ -35,54 +39,75 @@ function createArtifact() {
     includeDrivers: true,
   })
   const comparison = createVisualComparison({ baselineSimulation, candidateSimulation, population })
-  const events = [
-    {
-      day: scenario.eventDay,
-      type: 'scenario-event',
-      label: scenario.label,
-      strategy: null,
-    },
-    {
-      day: scenario.eventDay + candidateResponse.delayDays,
-      type: 'response-start',
-      label: '候选响应开始生效',
-      strategy: 'candidate',
-    },
-  ]
+  const visualBundle = createVisualBundle({
+    comparison,
+    events: [
+      {
+        day: scenario.eventDay,
+        type: 'scenario-event',
+        label: scenario.label,
+        strategy: null,
+      },
+      {
+        day: scenario.eventDay + candidateResponse.delayDays,
+        type: 'response-start',
+        label: '候选响应开始生效',
+        strategy: 'candidate',
+      },
+    ],
+  })
+  const ensemble = runPairedEnsemble({
+    scenario,
+    baselineResponse,
+    candidateResponse,
+    runs: ENSEMBLE_RUNS,
+    populationSize: 125,
+    seed: ENSEMBLE_SEED,
+  })
 
   return {
-    artifactVersion: 'visual-data-beta0.2',
+    artifactVersion: 'visual-data-beta0.3',
     claimType: 'scenario-index',
-    generatedBy: 'scripts/run-visual-bundle.js',
+    generatedBy: 'scripts/run-data-beta03.js',
     inputs: {
       populationSeed: POPULATION_SEED,
       simulationSeed: SIMULATION_SEED,
+      ensembleSeed: ENSEMBLE_SEED,
+      ensembleRuns: ENSEMBLE_RUNS,
+      evidence,
       scenario,
       strategies: { baseline: baselineResponse, candidate: candidateResponse },
     },
-    bundle: createVisualBundle({ comparison, events }),
+    bundle: visualBundle,
+    sensitivity: createSensitivityBundle({ ensemble, evidence }),
     notes: [
-      '数据用于独立 3D 运行态播放器，不属于路演页面或概念视频。',
-      '驱动项解释模型公式中的有符号贡献，不证明真实世界因果关系。',
-      'Reverse 声量、热度与 Agent 关系边尚未建模，前端必须保持 unavailable。',
-      '紧凑整数帧允许逐日随机访问和视觉插值，检查数值时必须回到原始日帧。',
+      '逐 Agent 棋盘是一条固定种子的代表性回放；不能把单个棋子路径理解为现实个体预测。',
+      'P10/P50/P90 来自配对的有界模型扰动，表示假设敏感性，不是统计置信区间或现实概率。',
+      '历史案例事实为 B 级专业媒体转述；模型触发强度和响应系数仍是研究者假设。',
+      'Reverse 声量、热度、Agent 级集合区间与关系边仍未建模，能力清单保持 false。',
     ],
   }
 }
 
 function createManifest(artifactBytes) {
   return {
-    manifestVersion: 'visual-data-manifest/1.0',
+    manifestVersion: 'visual-data-manifest/1.1',
     artifact: ARTIFACT_FILENAME,
-    artifactVersion: 'visual-data-beta0.2',
+    artifactVersion: 'visual-data-beta0.3',
     bundleSchemaVersion: 'visual-bundle/1.0',
+    sensitivitySchemaVersion: 'sensitivity-bundle/1.0',
     byteLength: artifactBytes.byteLength,
     sha256: crypto.createHash('sha256').update(artifactBytes).digest('hex'),
     populationSize: 125,
     cycleDays: 42,
+    evidenceGrade: evidence.grade,
     capabilities: {
       dailyRandomAccess: true,
       explainableDrivers: true,
+      dailyAggregateBands: true,
+      finalSegmentBands: true,
+      pairedStrategyDelta: true,
+      perAgentBands: false,
       relationEdges: false,
       reverseVoice: false,
       reverseHeat: false,
@@ -104,8 +129,8 @@ function writeArtifacts(outputDirectory = path.join(__dirname, '..', 'experiment
 
 if (require.main === module) {
   const { artifactPath, manifestPath } = writeArtifacts()
-  console.log(`Visual bundle written to ${path.relative(process.cwd(), artifactPath)}`)
-  console.log(`Visual manifest written to ${path.relative(process.cwd(), manifestPath)}`)
+  console.log(`Beta 0.3 data written to ${path.relative(process.cwd(), artifactPath)}`)
+  console.log(`Current visual manifest written to ${path.relative(process.cwd(), manifestPath)}`)
 }
 
 module.exports = { createArtifact, createManifest, writeArtifacts }

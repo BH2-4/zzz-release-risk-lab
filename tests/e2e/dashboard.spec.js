@@ -153,11 +153,11 @@ test('pitch deck fits target viewports and supports keyboard navigation', async 
   await page.screenshot({ path: 'artifacts/screenshots/pitch-landscape-phone.png' })
 })
 
-test('standalone 3D simulation renders and plays the full 42-day evolution', async ({ page }, testInfo) => {
+test('standalone 3D observer renders and replays the full 42-day evolution', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'desktop interaction and pixel audit')
   await page.goto('/simulation/')
 
-  await expect(page.getByRole('heading', { name: '发行影响演化沙盘' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '发行影响演化观察器' })).toBeVisible()
   await expect(page.getByTestId('simulation-data-status')).toHaveText('数据已校验')
   await expect(page.getByTestId('simulation-day')).toHaveText('01 / 42')
   const canvas = page.locator('#simulation-canvas')
@@ -166,14 +166,26 @@ test('standalone 3D simulation renders and plays the full 42-day evolution', asy
   expect(box.width).toBeGreaterThan(700)
   expect(box.height).toBeGreaterThan(420)
 
-  const pixelStats = await page.evaluate(() => window.__simulationDiagnostics.pixelStats())
+  const pixelStats = await page.evaluate(() => window.__evolutionDiagnostics.pixelStats())
   expect(pixelStats.opaqueRatio).toBeGreaterThan(0.95)
   expect(pixelStats.colorBuckets).toBeGreaterThan(12)
   expect(pixelStats.luminanceRange).toBeGreaterThan(25)
   const requests = await page.evaluate(() => performance.getEntriesByType('resource').map((entry) => entry.name))
   expect(requests.some((url) => url.includes('/roadshow/'))).toBe(false)
 
-  const point = await page.evaluate(() => window.__simulationDiagnostics.agentScreenPoint('S063'))
+  const dataContract = await page.evaluate(() => ({
+    artifactVersion: window.__evolutionDiagnostics.artifactVersion(),
+    capabilities: window.__evolutionDiagnostics.sensitivityCapabilities(),
+    day42: window.__evolutionDiagnostics.sensitivityDay('delta', 42),
+  }))
+  expect(dataContract.artifactVersion).toBe('visual-data-beta0.3')
+  expect(dataContract.capabilities.dailyAggregateBands).toBe(true)
+  expect(dataContract.capabilities.perAgentBands).toBe(false)
+  expect(dataContract.day42.risk.p10).toBeLessThanOrEqual(dataContract.day42.risk.p50)
+  expect(dataContract.day42.risk.p50).toBeLessThanOrEqual(dataContract.day42.risk.p90)
+  expect(dataContract.day42.risk.p50).toBeLessThan(0)
+
+  const point = await page.evaluate(() => window.__evolutionDiagnostics.agentScreenPoint('S063'))
   await page.mouse.click(point.x, point.y)
   await expect(page.getByTestId('selected-agent-id')).toHaveText('S063')
 
@@ -186,13 +198,13 @@ test('standalone 3D simulation renders and plays the full 42-day evolution', asy
     element.dispatchEvent(new Event('input', { bubbles: true }))
   })
   await expect(page.getByTestId('simulation-day')).toHaveText('25 / 42')
-  await expect(page.getByTestId('active-event')).toContainText('周年奖励期待落差')
+  await expect(page.getByTestId('active-event')).toContainText('角色机制修复后回退')
   await page.getByTestId('view-delta').click()
   await expect(page.getByTestId('aggregate-risk')).toContainText('-')
   await page.screenshot({ path: 'artifacts/screenshots/simulation-3d-desktop.png', fullPage: true })
 })
 
-test('standalone 3D simulation fits the mobile viewport', async ({ page }, testInfo) => {
+test('standalone 3D observer fits the mobile viewport', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile', 'mobile-only 3D layout assertion')
   await page.goto('/simulation/')
   await expect(page.getByTestId('simulation-data-status')).toHaveText('数据已校验')
@@ -203,7 +215,7 @@ test('standalone 3D simulation fits the mobile viewport', async ({ page }, testI
     scrollWidth: document.documentElement.scrollWidth,
   }))
   expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth)
-  const pixelStats = await page.evaluate(() => window.__simulationDiagnostics.pixelStats())
+  const pixelStats = await page.evaluate(() => window.__evolutionDiagnostics.pixelStats())
   expect(pixelStats.colorBuckets).toBeGreaterThan(8)
   await page.screenshot({ path: 'artifacts/screenshots/simulation-3d-mobile.png', fullPage: true })
 })

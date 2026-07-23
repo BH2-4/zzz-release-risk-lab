@@ -83,7 +83,9 @@ const elements = {
 }
 
 const state = {
+  artifact: null,
   bundle: null,
+  sensitivity: null,
   view: 'candidate',
   playhead: 1,
   sourceDay: 1,
@@ -112,11 +114,16 @@ function bytesToHex(buffer) {
   return [...new Uint8Array(buffer)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
-async function fetchVerifiedBundle() {
+async function fetchVerifiedArtifact() {
   const manifestResponse = await fetch('../experiments/output/visual-data-manifest.json', { cache: 'no-store' })
   if (!manifestResponse.ok) throw new Error(`数据清单请求失败（${manifestResponse.status}）`)
   const manifest = await manifestResponse.json()
-  if (manifest.manifestVersion !== 'visual-data-manifest/1.0') throw new Error('不支持的数据清单版本')
+  if (!['visual-data-manifest/1.0', 'visual-data-manifest/1.1'].includes(manifest.manifestVersion)) {
+    throw new Error('不支持的数据清单版本')
+  }
+  if (manifest.manifestVersion === 'visual-data-manifest/1.1' && !manifest.sensitivitySchemaVersion) {
+    throw new Error('当前数据清单缺少敏感性契约版本')
+  }
   if (!/^[a-z0-9.-]+\.json$/.test(manifest.artifact)) throw new Error('数据清单包含无效文件名')
   if (!Number.isSafeInteger(manifest.byteLength) || manifest.byteLength <= 0) throw new Error('数据清单包含无效字节长度')
   if (!/^[a-f0-9]{64}$/.test(manifest.sha256)) throw new Error('数据清单包含无效 SHA-256')
@@ -133,9 +140,20 @@ async function fetchVerifiedBundle() {
   const artifact = JSON.parse(artifactText)
   if (artifact.artifactVersion !== manifest.artifactVersion) throw new Error('数据产物版本与清单不一致')
   if (artifact.bundle?.schemaVersion !== manifest.bundleSchemaVersion) throw new Error('数据契约版本与清单不一致')
+  if (manifest.sensitivitySchemaVersion) {
+    if (artifact.sensitivity?.schemaVersion !== manifest.sensitivitySchemaVersion) {
+      throw new Error('敏感性数据契约版本与清单不一致')
+    }
+    if (!globalThis.ZZZSensitivityData?.decodeSensitivityDay) {
+      throw new Error('浏览器敏感性解码器未载入')
+    }
+    if (artifact.sensitivity.timeline?.dayCount !== manifest.cycleDays) {
+      throw new Error('敏感性周期与数据清单不一致')
+    }
+  }
   if (artifact.bundle.identities?.length !== manifest.populationSize) throw new Error('Agent 数量与清单不一致')
   if (artifact.bundle.timeline?.dayCount !== manifest.cycleDays) throw new Error('发行周期与清单不一致')
-  return artifact.bundle
+  return artifact
 }
 
 function decodeFrame(view, day) {
@@ -394,7 +412,9 @@ async function start() {
   refreshPlaybackIcon()
 
   try {
-    state.bundle = await fetchVerifiedBundle()
+    state.artifact = await fetchVerifiedArtifact()
+    state.bundle = state.artifact.bundle
+    state.sensitivity = state.artifact.sensitivity || null
     elements.range.max = String(state.bundle.timeline.dayCount)
     renderTimelineMarks()
     simulationScene = createSimulationScene({
@@ -412,11 +432,23 @@ async function start() {
     elements.status.classList.add('is-ready')
     elements.status.querySelector('span:last-child').textContent = '数据已校验'
     elements.app.dataset.simulationReady = 'true'
-    globalThis.__simulationDiagnostics = {
+    const diagnostics = {
       agentScreenPoint: (id) => simulationScene.agentScreenPoint(id),
+      artifactVersion: () => state.artifact.artifactVersion,
       pixelStats: () => simulationScene.pixelStats(),
       selectAgent,
+      sensitivityCapabilities: () => ({ ...(state.sensitivity?.capabilities || {}) }),
+      sensitivityDay: (view, day) => {
+        if (!state.sensitivity) throw new Error('当前产物不包含假设敏感性数据')
+        return globalThis.ZZZSensitivityData.decodeSensitivityDay(state.sensitivity, { view, day })
+      },
+      sensitivitySegments: (view, axis) => {
+        if (!state.sensitivity) throw new Error('当前产物不包含假设敏感性数据')
+        return globalThis.ZZZSensitivityData.decodeSensitivitySegments(state.sensitivity, { view, axis })
+      },
     }
+    globalThis.__evolutionDiagnostics = diagnostics
+    globalThis.__simulationDiagnostics = diagnostics
     requestAnimationFrame(animationTick)
   } catch (error) {
     elements.loading.hidden = true

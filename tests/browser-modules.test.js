@@ -30,6 +30,17 @@ test('visualization data module exposes a browser API without CommonJS globals',
   assert.equal(context.ZZZVisualizationData.VISUAL_REPLAY_SCHEMA_VERSION, 'visual-replay/1.0')
 })
 
+test('sensitivity data module exposes a browser API without CommonJS globals', () => {
+  const context = loadInBrowserContext('sensitivity-data.js')
+  assert.equal(typeof context.ZZZSensitivityData.createSensitivityBundle, 'function')
+  assert.equal(typeof context.ZZZSensitivityData.decodeSensitivityDay, 'function')
+  assert.equal(typeof context.ZZZSensitivityData.decodeSensitivitySegments, 'function')
+  assert.equal(
+    context.ZZZSensitivityData.SENSITIVITY_BUNDLE_SCHEMA_VERSION,
+    'sensitivity-bundle/1.0',
+  )
+})
+
 test('browser visualization adapter consumes the shared model fingerprint API', () => {
   const context = createBrowserContext()
   loadInBrowserContext('model.js', context)

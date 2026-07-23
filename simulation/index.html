@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="绝区零地区发行风险的 42 天 3D 社会演化沙盘。">
-  <title>发行影响演化沙盘 · 3D</title>
+  <meta name="description" content="绝区零地区发行风险的 42 天 3D 演化回放观察器。">
+  <title>发行影响演化观察器 · 3D</title>
   <link rel="icon" href="../assets/zzz-app-icon.jpg" type="image/jpeg">
   <link rel="stylesheet" href="styles.css">
   <script type="importmap">
@@ -22,8 +22,8 @@
       <div class="simulation-brand">
         <img src="../assets/zzz-app-icon.jpg" alt="绝区零" width="36" height="36">
         <div>
-          <p>NEW ERIDU RELEASE LAB · 非官方原型</p>
-          <h1>发行影响演化沙盘</h1>
+          <p>42 天演化回放 · 非官方原型</p>
+          <h1>发行影响演化观察器</h1>
         </div>
       </div>
 
@@ -43,7 +43,7 @@
     </header>
 
     <main class="simulation-workspace">
-      <section class="scene-surface" aria-label="125 个合成 Agent 的三维演化棋盘">
+      <section class="scene-surface" aria-label="125 个合成 Agent 的三维演化回放棋盘">
         <div id="canvas-host" class="canvas-host">
           <canvas id="simulation-canvas" aria-label="三维演化棋盘"></canvas>
           <div id="axis-label-layer" class="axis-label-layer" aria-hidden="true"></div>
@@ -145,6 +145,7 @@
 
   <noscript>该页面需要 JavaScript 与 WebGL。</noscript>
   <script src="../src/visualization-bundle.js"></script>
+  <script src="../src/sensitivity-data.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>
