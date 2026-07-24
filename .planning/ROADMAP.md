@@ -26,11 +26,11 @@ The competition milestone restores a trustworthy Theory Agent baseline, performs
   2. A fresh deterministic-fixture run records fixture path/digest, `realModelUsed: false`, valid review lineage, and a new content-addressed Theory System ID.
   3. `npm run build`, `npm test`, and `npm run test:e2e` all pass from a clean worktree.
 
-**Plans**: 2/4 plans executed
+**Plans**: 3/4 plans executed
 
 - [x] 01-01-PLAN.md
 - [x] 01-02-PLAN.md
-- [ ] 01-03-PLAN.md
+- [x] 01-03-PLAN.md
 - [ ] 01-04-PLAN.md
 
 **Wave 1**
@@ -43,7 +43,7 @@ The competition milestone restores a trustworthy Theory Agent baseline, performs
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] `01-03`: Authoritative CLI lifecycle regeneration
+- [x] `01-03`: Authoritative CLI lifecycle regeneration
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -99,7 +99,7 @@ The competition milestone restores a trustworthy Theory Agent baseline, performs
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Trustworthy Theory Pipeline | 2/4 | In Progress | - |
+| 1. Trustworthy Theory Pipeline | 3/4 | In Progress | - |
 | 2. Fixed-Case Evidence-Bound AI Compilation | 0/TBD | Not started | - |
 | 3. Injective Testnet Audit | 0/TBD | Not started | - |
 | 4. Mac Field Demo Closure | 0/TBD | Not started | - |
