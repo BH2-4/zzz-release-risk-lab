@@ -4,6 +4,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const { randomUUID } = require('node:crypto')
+const childProcess = require('node:child_process')
 
 const { createOpenAICompatibleProvider } = require('../src/ai-provider.js')
 const {
@@ -14,6 +15,7 @@ const {
 const { digestValue } = require('../src/artifact-digest.js')
 
 const projectRoot = path.resolve(__dirname, '..')
+const secureOutputHelper = path.join(__dirname, 'secure-run-output.py')
 const defaults = Object.freeze({
   extractions: 'data/evidence/extractions/zzz-1-4-fade-approved.json',
   evidenceReview: 'data/evidence/reviews/zzz-1-4-fade-evidence-review.json',
@@ -99,11 +101,24 @@ function resolveInputPath(root, relativePath, label) {
 function readJsonArtifact(root, relativePath, label) {
   const inputPath = resolveInputPath(root, relativePath, label)
   const safePath = path.relative(root, inputPath).split(path.sep).join('/')
+  let expectedIdentity
+  let fileDescriptor = null
   let contents
   try {
-    contents = fs.readFileSync(inputPath, 'utf8')
+    const expectedStat = fs.statSync(inputPath)
+    if (!expectedStat.isFile()) throw new TypeError(`${label} must be a regular file at ${safePath}`)
+    expectedIdentity = { dev: String(expectedStat.dev), ino: String(expectedStat.ino) }
+    fileDescriptor = fs.openSync(inputPath, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW)
+    const openedStat = fs.fstatSync(fileDescriptor)
+    const openedIdentity = { dev: String(openedStat.dev), ino: String(openedStat.ino) }
+    if (!openedStat.isFile() || openedIdentity.dev !== expectedIdentity.dev || openedIdentity.ino !== expectedIdentity.ino) {
+      throw new TypeError(`${label} changed while it was being opened at ${safePath}`)
+    }
+    contents = fs.readFileSync(fileDescriptor, 'utf8')
   } catch {
     throw new TypeError(`${label} could not be read at ${safePath}`)
+  } finally {
+    if (fileDescriptor !== null) fs.closeSync(fileDescriptor)
   }
   let value
   try {
@@ -111,7 +126,7 @@ function readJsonArtifact(root, relativePath, label) {
   } catch {
     throw new TypeError(`${label} contains invalid JSON at ${safePath}`)
   }
-  return { label, path: inputPath, value }
+  return { label, path: inputPath, identity: expectedIdentity, value }
 }
 
 function inspectPath(pathname) {
@@ -145,63 +160,124 @@ function ensureSafeOutputParent(root, outputPath) {
   return realParent
 }
 
-function assertSafeOutputTarget(outputPath) {
-  const stat = inspectPath(outputPath)
-  if (!stat) return
-  if (stat.isSymbolicLink()) throw new TypeError('Run output target must not be a symbolic link')
-  if (!stat.isFile()) throw new TypeError('Run output target must be a regular file')
+function sameIdentity(left, right) {
+  return left?.dev === right?.dev && left?.ino === right?.ino
 }
 
-function assertOutputDoesNotOverwriteInput(root, relativePath, inputArtifacts) {
-  const outputPath = resolveProjectPath(root, relativePath, 'Run output')
-  const candidatePaths = new Set([outputPath])
-  const outputStat = inspectPath(outputPath)
-  if (outputStat && !outputStat.isSymbolicLink()) candidatePaths.add(fs.realpathSync(outputPath))
+function runOutputHelper(output, operation, contents = '') {
+  const result = childProcess.spawnSync(
+    'python3',
+    [secureOutputHelper, operation, output.temporaryName, output.targetName, output.backupName],
+    {
+      encoding: 'utf8',
+      input: contents,
+      stdio: ['pipe', 'pipe', 'pipe', output.parentDescriptor],
+    },
+  )
+  if (result.error) throw new TypeError('Secure run output helper is unavailable')
+  return result
+}
+
+function inspectBoundOutputTarget(output) {
+  const result = runOutputHelper(output, 'inspect')
+  if (result.status !== 0) throw new TypeError('Run output target could not be inspected safely')
+  const [kind, dev, ino] = result.stdout.trim().split(/\s+/)
+  if (kind === 'missing') return { kind }
+  if (kind === 'symlink') throw new TypeError('Run output target must not be a symbolic link')
+  if (kind !== 'file') throw new TypeError('Run output target must be a regular file')
+  return { kind, identity: { dev, ino } }
+}
+
+function assertOutputParentStillBound(output) {
+  let realParent
+  let currentIdentity
+  try {
+    realParent = fs.realpathSync(output.parentPath)
+    const currentStat = fs.statSync(realParent)
+    currentIdentity = { dev: String(currentStat.dev), ino: String(currentStat.ino) }
+  } catch {
+    throw new TypeError('Run output parent changed during write')
+  }
+  if (!isInsideProject(output.root, realParent, { allowRoot: true }) ||
+      !sameIdentity(currentIdentity, output.parentIdentity)) {
+    throw new TypeError('Run output parent changed during write')
+  }
+}
+
+function assertOutputDoesNotOverwriteInput(output, inputArtifacts) {
   const collision = inputArtifacts.find((artifact) => {
-    if (candidatePaths.has(artifact.path)) return true
-    if (!outputStat || outputStat.isSymbolicLink()) return false
-    const inputStat = fs.statSync(artifact.path)
-    return outputStat.dev === inputStat.dev && outputStat.ino === inputStat.ino
+    if (output.outputPath === artifact.path) return true
+    return output.target.kind === 'file' && sameIdentity(output.target.identity, artifact.identity)
   })
   if (collision) throw new TypeError(`Run output must not overwrite the ${collision.label} input artifact`)
 }
 
 function prepareRunOutput(root, relativePath, inputArtifacts) {
   const outputPath = resolveProjectPath(root, relativePath, 'Run output')
-  ensureSafeOutputParent(root, outputPath)
-  assertSafeOutputTarget(outputPath)
-  assertOutputDoesNotOverwriteInput(root, relativePath, inputArtifacts)
-  return outputPath
-}
-
-function writeJsonAtomic(root, relativePath, value) {
-  const outputPath = resolveProjectPath(root, relativePath, 'Run output')
-  const outputParent = ensureSafeOutputParent(root, outputPath)
-  assertSafeOutputTarget(outputPath)
-  const serialized = JSON.stringify(value, null, 2)
-  if (typeof serialized !== 'string') throw new TypeError('Theory run must be JSON serializable')
-  const temporaryPath = path.join(outputParent, `.${path.basename(outputPath)}.tmp-${process.pid}-${randomUUID()}`)
-  let fileDescriptor = null
+  const parentPath = path.dirname(outputPath)
+  const realParent = ensureSafeOutputParent(root, outputPath)
+  const expectedParentStat = fs.statSync(realParent)
+  const parentIdentity = { dev: String(expectedParentStat.dev), ino: String(expectedParentStat.ino) }
+  let parentDescriptor = null
   try {
-    fileDescriptor = fs.openSync(temporaryPath, 'wx', 0o600)
-    fs.writeFileSync(fileDescriptor, `${serialized}\n`, 'utf8')
-    fs.fsyncSync(fileDescriptor)
-    fs.closeSync(fileDescriptor)
-    fileDescriptor = null
-
-    ensureSafeOutputParent(root, outputPath)
-    assertSafeOutputTarget(outputPath)
-    fs.renameSync(temporaryPath, outputPath)
-  } catch (error) {
-    if (fileDescriptor !== null) fs.closeSync(fileDescriptor)
-    try {
-      fs.unlinkSync(temporaryPath)
-    } catch (cleanupError) {
-      if (cleanupError.code !== 'ENOENT') throw cleanupError
+    parentDescriptor = fs.openSync(
+      realParent,
+      fs.constants.O_RDONLY | fs.constants.O_DIRECTORY | fs.constants.O_NOFOLLOW,
+    )
+    const openedParentStat = fs.fstatSync(parentDescriptor)
+    const openedParentIdentity = { dev: String(openedParentStat.dev), ino: String(openedParentStat.ino) }
+    if (!openedParentStat.isDirectory() || !sameIdentity(openedParentIdentity, parentIdentity)) {
+      throw new TypeError('Run output parent changed while it was being opened')
     }
+    const nonce = `${process.pid}-${randomUUID()}`
+    const output = {
+      root,
+      outputPath,
+      parentPath,
+      parentDescriptor,
+      parentIdentity,
+      targetName: path.basename(outputPath),
+      temporaryName: `.${path.basename(outputPath)}.tmp-${nonce}`,
+      backupName: `.${path.basename(outputPath)}.bak-${nonce}`,
+    }
+    assertOutputParentStillBound(output)
+    output.target = inspectBoundOutputTarget(output)
+    assertOutputDoesNotOverwriteInput(output, inputArtifacts)
+    return output
+  } catch (error) {
+    if (parentDescriptor !== null) fs.closeSync(parentDescriptor)
     throw error
   }
-  return outputPath
+}
+
+function closeRunOutput(output) {
+  if (output?.parentDescriptor !== null) {
+    fs.closeSync(output.parentDescriptor)
+    output.parentDescriptor = null
+  }
+}
+
+function writeJsonAtomic(output, value, { replace = true, beforeCommit } = {}) {
+  const serialized = JSON.stringify(value, null, 2)
+  if (typeof serialized !== 'string') throw new TypeError('Theory run must be JSON serializable')
+  assertOutputParentStillBound(output)
+  if (beforeCommit) beforeCommit()
+  const operation = replace ? 'write-replace' : 'write-noreplace'
+  const result = runOutputHelper(output, operation, `${serialized}\n`)
+  if (!replace && result.status === 17) {
+    throw new TypeError('Theory run already exists; pass --replace to start a new run explicitly')
+  }
+  if (result.status !== 0) throw new TypeError('Theory run could not be committed safely')
+  try {
+    assertOutputParentStillBound(output)
+  } catch (error) {
+    const rollback = runOutputHelper(output, replace ? 'rollback-replace' : 'rollback-noreplace')
+    if (rollback.status !== 0) throw new TypeError('Theory run output rollback failed')
+    throw error
+  }
+  const finalized = runOutputHelper(output, 'finalize')
+  if (finalized.status !== 0) throw new TypeError('Theory run output cleanup failed')
+  return output.outputPath
 }
 
 function loadInputArtifacts(root, env = process.env) {
@@ -270,7 +346,12 @@ function summarize(run) {
   }
 }
 
-async function runCommand({ argv = process.argv.slice(2), env = process.env, now = new Date().toISOString() } = {}) {
+async function runCommand({
+  argv = process.argv.slice(2),
+  env = process.env,
+  now = new Date().toISOString(),
+  beforeRunCommit,
+} = {}) {
   const { command, options } = parseArgs(argv)
   if (!command || ['help', '-h', '--help'].includes(command)) return { kind: 'help', text: usage() }
   const realRoot = resolveRealProjectRoot(projectRoot)
@@ -279,16 +360,22 @@ async function runCommand({ argv = process.argv.slice(2), env = process.env, now
   if (command === 'start') {
     const inputArtifacts = loadInputArtifacts(realRoot, env)
     const fixtureArtifact = loadFixtureArtifact(realRoot, env)
-    const runPath = prepareRunOutput(realRoot, runRelative, [...Object.values(inputArtifacts), fixtureArtifact])
-    if (inspectPath(runPath) && !options.replace) throw new TypeError('Theory run already exists; pass --replace to start a new run explicitly')
-    const run = await startTheoryAgent({
-      ...inputValues(inputArtifacts),
-      provider: createProvider(options, realRoot, env, fixtureArtifact),
-      runId: `zzz-fade-${now.replace(/[^0-9]/g, '').slice(0, 14)}`,
-      now,
-    })
-    writeJsonAtomic(realRoot, runRelative, run)
-    return { kind: 'run', summary: summarize(run), path: runRelative }
+    const output = prepareRunOutput(realRoot, runRelative, [...Object.values(inputArtifacts), fixtureArtifact])
+    try {
+      if (output.target.kind !== 'missing' && !options.replace) {
+        throw new TypeError('Theory run already exists; pass --replace to start a new run explicitly')
+      }
+      const run = await startTheoryAgent({
+        ...inputValues(inputArtifacts),
+        provider: createProvider(options, realRoot, env, fixtureArtifact),
+        runId: `zzz-fade-${now.replace(/[^0-9]/g, '').slice(0, 14)}`,
+        now,
+      })
+      writeJsonAtomic(output, run, { replace: options.replace === true, beforeCommit: beforeRunCommit })
+      return { kind: 'run', summary: summarize(run), path: runRelative }
+    } finally {
+      closeRunOutput(output)
+    }
   }
 
   const runArtifact = readJsonArtifact(realRoot, runRelative, 'Theory run')
@@ -297,47 +384,50 @@ async function runCommand({ argv = process.argv.slice(2), env = process.env, now
 
   const inputArtifacts = loadInputArtifacts(realRoot, env)
   const fixtureArtifact = loadFixtureArtifact(realRoot, env)
-  prepareRunOutput(realRoot, runRelative, [...Object.values(inputArtifacts), fixtureArtifact])
-
-  if (command === 'review') {
-    const decision = options.decision
-    if (!['approve', 'revise', 'reject'].includes(decision)) {
-      throw new TypeError('Review requires --decision approve, revise, or reject')
+  const output = prepareRunOutput(realRoot, runRelative, [...Object.values(inputArtifacts), fixtureArtifact])
+  try {
+    if (command === 'review') {
+      const decision = options.decision
+      if (!['approve', 'revise', 'reject'].includes(decision)) {
+        throw new TypeError('Review requires --decision approve, revise, or reject')
+      }
+      if (!options.reviewer) throw new TypeError('Review requires --reviewer')
+      if (decision === 'revise' && !options.feedback) throw new TypeError('Revision review requires --feedback')
+      const mappingDecision = decision === 'approve' ? 'approve' : decision
+      const reviewed = applyTheoryReview({
+        run,
+        review: {
+          schemaVersion: 'theory-review/1.0',
+          targetDigest: run.checkpoint?.targetDigest,
+          decision,
+          mappingDecisions: (run.mapping?.mappings || []).map((mapping) => ({
+            mappingId: mapping.id,
+            decision: mappingDecision,
+            reasonCodes: [decision === 'approve' ? 'HUMAN_VERIFIED' : decision === 'revise' ? 'REVISION_REQUIRED' : 'HUMAN_REJECTED'],
+          })),
+          reviewer: options.reviewer,
+          reviewedAt: now,
+          feedback: options.feedback ? [options.feedback] : [],
+        },
+      })
+      writeJsonAtomic(output, reviewed, { beforeCommit: beforeRunCommit })
+      return { kind: 'run', summary: summarize(reviewed), path: runRelative }
     }
-    if (!options.reviewer) throw new TypeError('Review requires --reviewer')
-    if (decision === 'revise' && !options.feedback) throw new TypeError('Revision review requires --feedback')
-    const mappingDecision = decision === 'approve' ? 'approve' : decision
-    const reviewed = applyTheoryReview({
-      run,
-      review: {
-        schemaVersion: 'theory-review/1.0',
-        targetDigest: run.checkpoint?.targetDigest,
-        decision,
-        mappingDecisions: (run.mapping?.mappings || []).map((mapping) => ({
-          mappingId: mapping.id,
-          decision: mappingDecision,
-          reasonCodes: [decision === 'approve' ? 'HUMAN_VERIFIED' : decision === 'revise' ? 'REVISION_REQUIRED' : 'HUMAN_REJECTED'],
-        })),
-        reviewer: options.reviewer,
-        reviewedAt: now,
-        feedback: options.feedback ? [options.feedback] : [],
-      },
-    })
-    writeJsonAtomic(realRoot, runRelative, reviewed)
-    return { kind: 'run', summary: summarize(reviewed), path: runRelative }
-  }
 
-  if (command === 'resume') {
-    const inputs = inputValues(inputArtifacts)
-    const provider = run.state === 'REVISION_REQUESTED'
-      ? createProvider(options, realRoot, env, fixtureArtifact)
-      : undefined
-    const resumed = await resumeTheoryAgent({ run, provider, ...inputs, now })
-    writeJsonAtomic(realRoot, runRelative, resumed)
-    return { kind: 'run', summary: summarize(resumed), path: runRelative }
-  }
+    if (command === 'resume') {
+      const inputs = inputValues(inputArtifacts)
+      const provider = run.state === 'REVISION_REQUESTED'
+        ? createProvider(options, realRoot, env, fixtureArtifact)
+        : undefined
+      const resumed = await resumeTheoryAgent({ run, provider, ...inputs, now })
+      writeJsonAtomic(output, resumed, { beforeCommit: beforeRunCommit })
+      return { kind: 'run', summary: summarize(resumed), path: runRelative }
+    }
 
-  throw new TypeError(`Unknown command: ${command}`)
+    throw new TypeError(`Unknown command: ${command}`)
+  } finally {
+    closeRunOutput(output)
+  }
 }
 
 async function main() {
