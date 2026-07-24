@@ -13,6 +13,7 @@ const checkedLedger = require('../data/evidence/ledger.json')
 const checkedTheoryCatalog = require('../data/evidence/theory-catalog.json')
 const checkedVerticalSlice = require('../data/scenarios/zzz-3-1-fade-risk-vertical-slice.json')
 const checkedMapping = require('../data/theory-agent/zzz-1-4-fade-mapping-fixture.json')
+const { digestValue } = require('../src/artifact-digest.js')
 const {
   applyTheoryReview,
   resumeTheoryAgent,
@@ -47,7 +48,9 @@ function mappingProvider() {
       return {
         object: structuredClone(checkedMapping),
         provenance: {
-          mode: 'deterministic-fixture', provider: 'checked-in-fixture', model: null, requestId: null,
+          mode: 'deterministic-fixture',
+          fixturePath: 'data/theory-agent/zzz-1-4-fade-mapping-fixture.json',
+          fixtureDigest: digestValue(checkedMapping),
         },
       }
     },

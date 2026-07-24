@@ -45,7 +45,12 @@ function theorySystemFixture() {
       reviewer: 'test-reviewer',
       reviewedAt: '2026-07-24T10:00:00+08:00',
     },
-    provenance: { mode: 'manual-test-fixture', realModelUsed: false },
+    provenance: {
+      mode: 'deterministic-fixture',
+      fixturePath: 'tests/compilation-pipeline.test.js',
+      fixtureDigest: mappingDigest,
+      realModelUsed: false,
+    },
   }
   return { ...unsigned, id: `theory-system:${digestValue(unsigned)}` }
 }
