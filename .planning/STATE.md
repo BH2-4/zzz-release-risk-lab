@@ -4,15 +4,15 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 1
 current_phase_name: Trustworthy Theory Pipeline
-status: verifying
-stopped_at: Completed ZZZ-01-04-PLAN.md; ready for independent verification
-last_updated: "2026-07-24T08:26:10.000Z"
+status: executing
+stopped_at: Independent review failed; ZZZ-01-05 gap closure planned and checker-approved
+last_updated: "2026-07-24T17:05:00+08:00"
 last_activity: 2026-07-24
-last_activity_desc: Plan 01-04 Mac closure gates complete
+last_activity_desc: Independent review gaps captured in checker-approved Plan 01-05
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 4
+  total_plans: 5
   completed_plans: 4
 ---
 
@@ -27,12 +27,12 @@ See: `.planning/PROJECT.md` (updated 2026-07-24)
 
 ## Current Position
 
-Phase: 1 (Trustworthy Theory Pipeline) — READY FOR VERIFICATION
-Plan: 4 of 4
-Status: Local closure complete; independent verification pending
-Last activity: 2026-07-24 — Plan 01-04 Mac closure gates complete
+Phase: 1 (Trustworthy Theory Pipeline) — GAP CLOSURE PLANNED
+Plan: 5 of 5
+Status: Plan 01-05 checker-approved; execution pending
+Last activity: 2026-07-24 — Independent review found persisted-run authority gaps
 
-Progress: [██████████] 100% of plans; phase completion awaits verifier
+Progress: [████████░░] 80% of plans; Phase 1 remains incomplete
 
 ## Performance Metrics
 
@@ -80,7 +80,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- Plan 01-04 local closure is green on the competition Mac: focused 39/39, build pass, Node 146/146, host E2E 10 passed with 4 explicit project-matrix skips, and no unresolved HIGH closure finding. Independent verifier review remains pending.
+- Independent deep review found 2 HIGH and 2 MEDIUM persisted-run authority gaps after the Plan 01-04 Mac gates passed: unvalidated public `status`, review validation without current inputs, READY Theory System detachment from the approved mapping, and review decision/event-state contradiction. Plan 01-05 is checker-approved and must close all four before Phase 1 can be re-verified.
 - No model key or real model output is available for Phase 2.
 - Phase 3 contains externally consequential wallet actions and cannot auto-execute.
 
@@ -92,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-24T08:26:10.000Z
-Stopped at: Completed ZZZ-01-04-PLAN.md; ready for independent verification
+Last session: 2026-07-24T17:05:00+08:00
+Stopped at: Independent review failed; ZZZ-01-05 gap closure planned and checker-approved
 Resume file: None
