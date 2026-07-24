@@ -69,6 +69,7 @@ async function pendingRun(inputs = inputFixtures()) {
 async function readyRun(inputs = inputFixtures()) {
   const pending = await pendingRun(inputs)
   const approved = applyTheoryReview({
+    ...inputs,
     run: pending,
     review: {
       schemaVersion: 'theory-review/1.0',

@@ -57,7 +57,7 @@ async function readyRun() {
     runId: 'security-ready-run',
     now: '2026-07-24T14:00:00+08:00',
   })
-  const approved = applyTheoryReview({ run: pending, review: approvingReview(pending) })
+  const approved = applyTheoryReview({ ...inputs, run: pending, review: approvingReview(pending) })
   return resumeTheoryAgent({
     ...inputs,
     run: approved,
@@ -240,7 +240,7 @@ test('a review timestamp cannot move backwards from the pending event', async ()
   })
 
   assert.throws(
-    () => applyTheoryReview({ run: pending, review: approvingReview(pending, '2026-07-24T13:59:00+08:00') }),
+    () => applyTheoryReview({ ...inputs, run: pending, review: approvingReview(pending, '2026-07-24T13:59:00+08:00') }),
     /timestamp|event time|before/i,
   )
 })

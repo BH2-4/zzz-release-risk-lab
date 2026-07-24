@@ -11,6 +11,7 @@ const {
   applyTheoryReview,
   resumeTheoryAgent,
   startTheoryAgent,
+  validateTheoryAgentRun,
 } = require('../src/theory-agent.js')
 const { digestValue } = require('../src/artifact-digest.js')
 
@@ -478,6 +479,11 @@ function summarize(run) {
   }
 }
 
+function assertAuthoritativeRun(run, inputs) {
+  const validation = validateTheoryAgentRun(run, inputs)
+  if (!validation.valid) throw new TypeError('Theory run authority validation failed')
+}
+
 async function runCommand({
   argv = process.argv.slice(2),
   env = process.env,
@@ -526,12 +532,19 @@ async function runCommand({
       if (output.target.kind !== 'file' || !sameIdentity(output.target.identity, runArtifact.identity)) {
         throw new TypeError('Theory run changed after it was read')
       }
-      if (command === 'status') return { kind: 'run', summary: summarize(run), path: runRelative }
+      if (command === 'status') {
+        const inputArtifacts = loadInputArtifacts(inputContext, env)
+        assertOutputDoesNotOverwriteInput(output, Object.values(inputArtifacts))
+        assertAuthoritativeRun(run, inputValues(inputArtifacts))
+        return { kind: 'run', summary: summarize(run), path: runRelative }
+      }
 
       const inputArtifacts = loadInputArtifacts(inputContext, env)
       const fixtureArtifact = loadFixtureArtifact(inputContext, env)
       assertOutputDoesNotOverwriteInput(output, [...Object.values(inputArtifacts), fixtureArtifact])
       if (command === 'review') {
+        const inputs = inputValues(inputArtifacts)
+        assertAuthoritativeRun(run, inputs)
         const decision = options.decision
         if (!['approve', 'revise', 'reject'].includes(decision)) {
           throw new TypeError('Review requires --decision approve, revise, or reject')
@@ -540,6 +553,7 @@ async function runCommand({
         if (decision === 'revise' && !options.feedback) throw new TypeError('Revision review requires --feedback')
         const mappingDecision = decision === 'approve' ? 'approve' : decision
         const reviewed = applyTheoryReview({
+          ...inputs,
           run,
           review: {
             schemaVersion: 'theory-review/1.0',
