@@ -2,7 +2,7 @@
 phase: ZZZ-01-trustworthy-theory-pipeline
 plan: "02"
 subsystem: theory-cli-filesystem-security
-tags: [node-fs, root-fd, symlink-defense, journal-recovery, cooperative-locking, error-redaction]
+tags: [node-fs, root-fd, symlink-defense, revisioned-journal, caller-ack, cooperative-locking, error-redaction]
 
 requires:
   - phase: ZZZ-01-01
@@ -10,12 +10,12 @@ requires:
 provides:
   - Root-descriptor containment for every Theory Agent CLI artifact input
   - Protected-input alias and symlink rejection before provider access
-  - Journaled, descriptor-bound JSON persistence with no-clobber publication and interruption recovery
+  - Revisioned, descriptor-bound JSON persistence with no-clobber publication, interruption recovery, and caller acknowledgement
 affects: [01-03-authoritative-regeneration, 01-04-quality-closure]
 
 tech-stack:
   added: [python3-posix-standard-library]
-  patterns: [root-fd-component-walk, inherited-directory-fd, atomic-no-clobber-publish, journaled-recovery, cooperative-writer-flock]
+  patterns: [root-fd-component-walk, inherited-directory-fd, atomic-no-clobber-publish, revisioned-journal-adoption, caller-acknowledged-finalize, cooperative-writer-flock]
 
 key-files:
   created:
@@ -32,10 +32,13 @@ key-decisions:
   - "Walk inputs and mutate outputs through inherited directory descriptors because Node does not expose safe directory-relative filesystem operations on macOS."
   - "Persist deterministic transaction journals so an interrupted helper can reconcile whether publication happened and recover only operation-owned entries."
   - "Bound concurrency guarantees to cooperating project CLI writers that acquire the parent-directory flock; non-cooperating same-UID mutation is outside the local MVP threat model."
+  - "Open and reconcile the run output transaction before reading the run for status, review, or resume."
+  - "Retain the published journal until Node validates the published inode and explicitly acknowledges cleanup."
 
 patterns-established:
   - "Stable inputs: duplicate the project-root descriptor and open every path component with O_DIRECTORY/O_NOFOLLOW before opening the final regular file."
   - "Recoverable writes: journal operation IDs, expected and owned inode identities, and fsynced state transitions before no-clobber publication or replacement."
+  - "Recoverable journal updates: publish unique revision candidates that recovery can validate, adopt, and retry without removing non-owned names."
   - "Cooperative serialization: every output helper operation acquires a non-blocking exclusive flock on the inherited parent-directory descriptor."
 
 requirements-completed: [TRUST-01]
@@ -71,20 +74,20 @@ coverage:
         status: pass
     human_judgment: false
 
-duration: 84 min
+duration: 131 min
 completed: 2026-07-24
 status: complete
 ---
 
 # Phase ZZZ-01 Plan 02: CLI Filesystem Boundary Hardening Summary
 
-**Root-descriptor input walking and journaled directory-relative writes now close the cooperating-CLI race and interruption cases while preserving the closed provenance lifecycle.**
+**Root-descriptor input walking plus revisioned, caller-acknowledged output transactions now close the cooperating-CLI read, recovery, and lost-response cases while preserving the closed provenance lifecycle.**
 
 ## Performance
 
-- **Duration:** 84 min
+- **Duration:** 131 min
 - **Started:** 2026-07-24T00:49:30Z
-- **Completed:** 2026-07-24T02:13:38Z
+- **Completed:** 2026-07-24T03:00:50Z
 - **Tasks:** 2
 - **Files modified:** 7
 
@@ -93,7 +96,8 @@ status: complete
 - Every CLI input is opened by walking from inherited project-root FD 3 with no-follow directory component opens, eliminating parent-swap traversal windows.
 - Ordinary `start` and replacement commands use operation-scoped files, expected inode validation, fsynced journal transitions, no-clobber publication, and interruption reconciliation.
 - Recovery preserves later target owners instead of overwriting them, while cooperating CLI writers serialize through the parent-directory flock.
-- Malformed JSON errors remain redacted; all 40 focused Theory tests and all repository gates pass without changing the locked suite.
+- Status, review, and resume reconcile any pending output transaction before opening the run artifact.
+- Malformed JSON errors remain redacted; all 45 focused Theory tests pass without changing the locked suite.
 
 ## Task Commits
 
@@ -103,13 +107,14 @@ Each task was committed atomically:
 2. **Task 2: Complete exclusive atomic writes and artifact-safe JSON errors** - `2f793e6` (feat)
 3. **Code review fix: Close no-clobber and path-swap races** - `2f6b3e9` (fix)
 4. **Code review fix: Make Theory run transactions recoverable** - `d5c36ed` (fix)
+5. **Code review fix: Acknowledge recoverable Theory publications** - `3b17daf` (fix)
 
 ## Files Created/Modified
 
 - `scripts/run-theory-agent.js` - Passes stable root/parent descriptors to secure helpers and reconciles abnormal output-helper exits.
 - `scripts/secure-input-read.py` - Walks project-relative input components from inherited root FD 3 using `dir_fd`, `O_DIRECTORY`, and `O_NOFOLLOW`.
-- `scripts/secure-run-output.py` - Runs locked, journaled, inode-aware publication and recovery relative to inherited parent-directory FD 3.
-- `tests/theory-agent-cli-races.test.js` - Covers 12 deterministic creation, parent-swap, target-change, interruption, recovery, and conflict-preservation cases.
+- `scripts/secure-run-output.py` - Runs locked, revisioned, inode-aware publication, recovery, and caller-acknowledged finalization relative to inherited parent-directory FD 3.
+- `tests/theory-agent-cli-races.test.js` - Covers 17 deterministic creation, parent-swap, target-change, interruption, recovery, acknowledgement, and conflict-preservation cases.
 
 ## Decisions Made
 
@@ -118,12 +123,13 @@ Each task was committed atomically:
 - Allowed regular run-file replacement for `review`, `resume`, and explicit `start --replace`, but rejected symlinks and non-regular targets.
 - Used the repository's existing `python3` runtime for native `dir_fd` operations after confirming Node cannot address children through an open directory FD on macOS.
 - Defined the supported concurrency contract as local single-user, cooperating CLI writers. Every project CLI writer must take the same directory flock; hostile non-cooperating same-UID mutation and platform-specific universal filesystem CAS are outside scope.
+- Kept macOS local demonstration as the MVP platform commitment while retaining existing POSIX/Python behavior for Ubuntu CI; no private filesystem syscall or platform matrix was added.
 
 ## TDD Gate Compliance
 
 - The locked `tests/theory-agent-cli.test.js` suite supplied the RED baseline: 1/6 passed and five declared Plan 01-02 attacks failed before implementation.
 - The plan explicitly prohibited editing that test file, so no new RED test commit was created. Its SHA-256 remained `53ca63c48afb367691caa492cb478823575473e922719e9cafd63c97effe8e23` throughout.
-- GREEN completed in two task-scoped production commits plus two review-fix commits; the final locked suite passes 6/6 and the race/recovery suite passes 12/12.
+- GREEN completed in two task-scoped production commits plus three review-fix commits; the final locked suite passes 6/6 and the race/recovery suite passes 17/17.
 
 ## Deviations from Plan
 
@@ -168,17 +174,39 @@ Each task was committed atomically:
 - **Verification:** All supported writer paths use `LOCK_EX | LOCK_NB`; conflict recovery preserves a later target owner and its moved backup.
 - **Committed in:** `d5c36ed` (implementation); threat-boundary metadata recorded by this closeout
 
-**Total deviations:** 5 auto-fixed (3 correctness/security, 1 scoped threat-model decision, 1 metadata). **Impact:** Closes the in-scope review findings without changing CLI syntax, provenance behavior, or the locked test boundary.
+**6. [Rule 1 - Bug] Recovered every non-start transaction before reading its run**
+- **Found during:** Third independent code review
+- **Issue:** `status`, `review`, and `resume` opened the run before output recovery, so an interrupted replacement could leave the target temporarily absent and prevent the command that should reconcile it.
+- **Fix:** Open and recover the bound output transaction first, then read the run through the root-FD helper and compare it with the recovered target identity.
+- **Files modified:** `scripts/run-theory-agent.js`, `tests/theory-agent-cli-races.test.js`
+- **Verification:** A direct `between-replacement-steps` interruption followed by a fresh `status` restores the original run and removes all owned debris.
+- **Committed in:** `3b17daf`
+
+**7. [Rule 2 - Missing Critical] Made journal-update and backup auxiliaries idempotently recoverable**
+- **Found during:** Third independent code review
+- **Issue:** A deterministic O_EXCL journal-update name or unjournaled backup placeholder could strand an operation and permanently block later recovery.
+- **Fix:** Journal updates now use unique revisioned candidates that recovery validates and adopts; non-owned candidates survive untouched. Replacement backup uses a no-clobber hard link whose expected inode can be adopted after interruption, eliminating the placeholder lifecycle.
+- **Files modified:** `scripts/secure-run-output.py`, `tests/theory-agent-cli-races.test.js`
+- **Verification:** Failpoints immediately after update creation, before update replacement, and after backup creation converge across repeated recoveries while a non-owned similarly named file remains byte-identical.
+- **Committed in:** `3b17daf`
+
+**8. [Rule 1 - Bug] Required caller acknowledgement before published-journal cleanup**
+- **Found during:** Third independent code review
+- **Issue:** The helper removed its published journal before Node received and validated the final response, losing durable proof when the response was absent or malformed.
+- **Fix:** Published transactions retain their journal until Node verifies the target inode and invokes an idempotent `finalize` operation. Lost and malformed responses first recover the published identity, then acknowledge cleanup.
+- **Files modified:** `scripts/run-theory-agent.js`, `scripts/secure-run-output.py`, `tests/theory-agent-cli-races.test.js`
+- **Verification:** Both post-publication process exit and malformed final JSON return success only after recovery identifies the owned published inode; finalization leaves no owned debris.
+- **Committed in:** `3b17daf`
+
+**Total deviations:** 8 auto-fixed (6 correctness/security, 1 scoped threat-model decision, 1 metadata). **Impact:** Closes all currently identified in-scope review findings without changing CLI syntax, provenance behavior, or the locked test boundary.
 
 ## Verification Results
 
 - PASS: `node --test tests/theory-agent-cli.test.js` - 6/6.
-- PASS: `node --test tests/theory-agent-cli-races.test.js` - 12/12.
-- PASS: `node --test tests/theory-mapper.test.js tests/theory-agent.test.js tests/theory-agent-security.test.js tests/theory-agent-cli.test.js tests/theory-agent-cli-races.test.js` - 40/40.
+- PASS: `node --test tests/theory-agent-cli-races.test.js` - 17/17.
+- PASS: `node --test tests/theory-mapper.test.js tests/theory-agent.test.js tests/theory-agent-security.test.js tests/theory-agent-cli.test.js tests/theory-agent-cli-races.test.js` - 45/45.
 - PASS: live-mode protected-ledger collision rejects before missing provider credentials are inspected.
-- PASS: `npm run build` - RiskCommitment built successfully.
-- PASS: `npm test` - 140/140.
-- PASS: `npm run test:e2e` - 10 passed, 4 skipped.
+- PREVIOUS PASS before `3b17daf`: `npm run build`, `npm test` 140/140, and `npm run test:e2e` 10 passed / 4 skipped. The orchestrator owns the fresh post-fix rerun.
 - PASS: `git diff --check`.
 - PASS: `tests/theory-agent-cli.test.js` is unchanged at SHA-256 `53ca63c48afb367691caa492cb478823575473e922719e9cafd63c97effe8e23`.
 
@@ -193,12 +221,12 @@ Python 3 with POSIX `dir_fd` and `fcntl.flock` support is required; no third-par
 ## Next Phase Readiness
 
 - The hardened CLI is ready for Plan 01-03 authoritative lifecycle regeneration.
-- Fresh `npm run build`, full `npm test`, and `npm run test:e2e` gates are green, but formal TRUST-03/04 completion remains assigned to Plans 01-03/01-04; this plan does not mark Phase 1 complete.
+- The orchestrator will run independent review plus fresh `npm run build`, full `npm test`, and `npm run test:e2e` before the PR branch is pushed; formal TRUST-03/04 completion remains assigned to Plans 01-03/01-04.
 
 ## Self-Check: PASSED
 
 - All four declared code/test files and the summary exist.
-- Task and review commits `06c2eb6`, `2f793e6`, `2f6b3e9`, and `d5c36ed` are present in git history.
+- Task and review commits `06c2eb6`, `2f793e6`, `2f6b3e9`, `d5c36ed`, and `3b17daf` are present in git history.
 - Coverage metadata classifies all three deliverables as automation-backed PASS.
 
 ---
