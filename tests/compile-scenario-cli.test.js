@@ -13,6 +13,7 @@ const checkedLedger = require('../data/evidence/ledger.json')
 const checkedTheoryCatalog = require('../data/evidence/theory-catalog.json')
 const checkedVerticalSlice = require('../data/scenarios/zzz-3-1-fade-risk-vertical-slice.json')
 const checkedMapping = require('../data/theory-agent/zzz-1-4-fade-mapping-fixture.json')
+const checkedTheoryRun = require('../experiments/output/theory/zzz-1-4-fade-run.json')
 const { digestValue } = require('../src/artifact-digest.js')
 const {
   applyTheoryReview,
@@ -94,13 +95,14 @@ async function readyRun(inputs = inputFixtures()) {
 
 async function installCompilationInputs(root, paths = defaults) {
   const inputs = inputFixtures()
-  const run = await readyRun(inputs)
+  const run = structuredClone(checkedTheoryRun)
   writeJson(root, paths.approvedExtractions, inputs.approvedExtractions)
   writeJson(root, paths.evidenceReview, inputs.evidenceReview)
   writeJson(root, paths.ledger, inputs.ledger)
   writeJson(root, paths.theoryCatalog, inputs.theoryCatalog)
   writeJson(root, paths.verticalSlice, checkedVerticalSlice)
   writeJson(root, paths.theoryRun, run)
+  fs.mkdirSync(path.dirname(path.join(root, paths.output)), { recursive: true, mode: 0o700 })
   return { ...inputs, run, verticalSlice: structuredClone(checkedVerticalSlice) }
 }
 
@@ -140,7 +142,10 @@ test('compile CLI defaults to the 3.1 fade slice and injects the ready Theory Sy
   assert.equal(calls[0].config.model, 'test-model')
   assert.equal(calls[1].input.provider, provider)
   assert.deepEqual(calls[1].input.ledger, fixture.ledger)
+  assert.deepEqual(calls[1].input.approvedExtractions, fixture.approvedExtractions)
+  assert.deepEqual(calls[1].input.evidenceReview, fixture.evidenceReview)
   assert.deepEqual(calls[1].input.theoryCatalog, fixture.theoryCatalog)
+  assert.deepEqual(calls[1].input.theoryRun, fixture.run)
   assert.deepEqual(calls[1].input.theorySystem, fixture.run.theorySystem)
   assert.deepEqual(calls[1].input.verticalSlice, fixture.verticalSlice)
   assert.equal(result.outputRelative, defaults.output)
@@ -148,6 +153,7 @@ test('compile CLI defaults to the 3.1 fade slice and injects the ready Theory Sy
   assert.equal(written.compiled, true)
   assert.equal(written.verticalSliceId, 'zzz-3-1-fade-risk-v1')
   assert.equal(written.capabilities.realModelUsed, true)
+  assert.equal(fs.statSync(path.join(projectRoot, defaults.output)).mode & 0o777, 0o600)
 })
 
 test('compile CLI accepts explicit input and output paths and keeps them inside the project', async (context) => {
@@ -370,6 +376,25 @@ test('compile CLI atomically rejects symlinked output parents and final targets'
   fs.symlinkSync(outsideTarget, path.join(projectRoot, 'safe-output/result.json'))
   await assert.rejects(() => command('safe-output/result.json'), /AI output target must not be a symbolic link/)
   assert.equal(fs.readFileSync(outsideTarget, 'utf8'), 'outside-content')
+})
+
+test('compile CLI requires an existing output parent before provider creation', async (context) => {
+  const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'program-e-compile-missing-parent-'))
+  context.after(() => fs.rmSync(projectRoot, { recursive: true, force: true }))
+  await installCompilationInputs(projectRoot)
+  const missingParent = path.join(projectRoot, 'missing-output')
+  let providerCreated = false
+
+  await assert.rejects(
+    () => runCommand({
+      argv: ['--output', 'missing-output/result.json'], env: {}, projectRoot,
+      providerFactory: () => { providerCreated = true; return {} },
+      compile: async () => liveCompilation({ ok: true }),
+    }),
+    /AI output parent does not exist/i,
+  )
+  assert.equal(providerCreated, false)
+  assert.equal(fs.existsSync(missingParent), false)
 })
 
 test('compile CLI fails closed without a real live-model result and writes no output', async (context) => {
