@@ -2,6 +2,7 @@
 
 const { digestValue, isSha256Digest } = require('./artifact-digest.js')
 const { validateEvidenceLedger } = require('./evidence-ledger.js')
+const { validateTheoryProvenance } = require('./theory-mapper.js')
 
 const THEORY_SYSTEM_SCHEMA_VERSION = 'theory-system/1.0'
 const THEORY_REVIEW_SCHEMA_VERSION = 'theory-review/1.0'
@@ -172,11 +173,14 @@ function finalizeTheorySystem({ mapping, review, approvedExtractions, evidenceRe
     throw new TypeError('Theory system requires every approved evidence claim to be mapped')
   }
   const provenance = {
-    mode: mapping.provenance?.mode || 'unknown',
-    provider: mapping.provenance?.provider || null,
-    model: mapping.provenance?.model || null,
-    requestId: mapping.provenance?.requestId || null,
+    ...structuredClone(mapping.provenance),
     realModelUsed: mapping.capabilities?.realModelUsed === true,
+  }
+  const provenanceValidation = validateTheoryProvenance(provenance, {
+    realModelUsed: mapping.capabilities?.realModelUsed,
+  })
+  if (!provenanceValidation.valid) {
+    throw new TypeError(`Theory provenance failed validation: ${provenanceValidation.errors.join('; ')}`)
   }
   const unsigned = {
     schemaVersion: THEORY_SYSTEM_SCHEMA_VERSION,
@@ -217,6 +221,10 @@ function validateTheorySystem(system, { approvedExtractions, evidenceReview, led
   unknownFields(system, SYSTEM_FIELDS, 'Theory system', errors)
   if (system.schemaVersion !== THEORY_SYSTEM_SCHEMA_VERSION) errors.push('Unsupported theory system schema')
   if (system.status !== 'approved') errors.push('Compilation requires an approved theory system')
+  const provenanceValidation = validateTheoryProvenance(system.provenance, {
+    realModelUsed: system.provenance?.realModelUsed,
+  })
+  if (!provenanceValidation.valid) errors.push(...provenanceValidation.errors)
   if (!isSha256Digest(system.catalogDigest) || !isSha256Digest(system.ledgerDigest) ||
       !isSha256Digest(system.evidenceReviewDigest) || !isSha256Digest(system.mappingDigest)) {
     errors.push('Theory system requires SHA-256 input digests')

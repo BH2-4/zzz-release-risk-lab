@@ -1,5 +1,9 @@
 'use strict'
 
+const path = require('node:path')
+
+const { isSha256Digest } = require('./artifact-digest.js')
+
 const THEORY_MAPPING_SCHEMA_VERSION = 'theory-mapping/1.0'
 const ROOT_FIELDS = new Set([
   'schemaVersion', 'extractionRefs', 'mappings', 'unmappedClaimIds', 'limitations',
@@ -9,9 +13,80 @@ const MAPPING_FIELDS = new Set([
   'id', 'theoryId', 'claimProposalIds', 'constructs', 'mechanism',
   'suggestedParameterPaths', 'confidence', 'limitations',
 ])
+const PROVENANCE_FIELDS = Object.freeze({
+  'deterministic-fixture': new Set(['mode', 'fixturePath', 'fixtureDigest', 'realModelUsed']),
+  'live-model': new Set(['mode', 'provider', 'model', 'requestId', 'schemaName', 'realModelUsed']),
+  'recorded-model-output': new Set([
+    'mode', 'provider', 'model', 'requestId', 'schemaName', 'recordingId', 'realModelUsed',
+  ]),
+})
 
 function isNonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0
+}
+
+function isRepositoryRelativePath(value) {
+  if (!isNonEmptyString(value) || value !== value.trim()) return false
+  if (path.posix.isAbsolute(value) || path.win32.isAbsolute(value)) return false
+  const segments = value.replaceAll('\\', '/').split('/')
+  return segments.length > 0 && segments.every((segment) => segment !== '' && segment !== '.' && segment !== '..')
+}
+
+function validateTheoryProvenance(provenance, { realModelUsed } = {}) {
+  const errors = []
+  if (!provenance || typeof provenance !== 'object' || Array.isArray(provenance)) {
+    return { valid: false, errors: ['Theory provenance must be an object'] }
+  }
+
+  const allowedFields = PROVENANCE_FIELDS[provenance.mode]
+  if (!allowedFields) {
+    errors.push(`Unsupported theory provenance mode: ${provenance.mode || 'missing'}`)
+  } else {
+    for (const field of Object.keys(provenance)) {
+      if (!allowedFields.has(field)) errors.push(`Theory provenance contains unknown field for ${provenance.mode}: ${field}`)
+    }
+  }
+
+  const derivedRealModelUsed = provenance.mode === 'live-model'
+  if (provenance.mode === 'deterministic-fixture') {
+    if (!isRepositoryRelativePath(provenance.fixturePath)) {
+      errors.push('Deterministic fixture provenance requires a repository-relative fixturePath')
+    }
+    if (!isSha256Digest(provenance.fixtureDigest)) {
+      errors.push('Deterministic fixture provenance requires a canonical fixtureDigest')
+    }
+  }
+  if (provenance.mode === 'live-model') {
+    for (const field of ['provider', 'model', 'requestId']) {
+      if (!isNonEmptyString(provenance[field])) errors.push(`Live model provenance requires ${field}`)
+    }
+    if ('schemaName' in provenance && !isNonEmptyString(provenance.schemaName)) {
+      errors.push('Live model provenance schemaName must be non-empty when present')
+    }
+  }
+  if (provenance.mode === 'recorded-model-output') {
+    for (const field of ['provider', 'model', 'schemaName', 'recordingId']) {
+      if (field in provenance && !isNonEmptyString(provenance[field])) {
+        errors.push(`Recorded model provenance ${field} must be non-empty when present`)
+      }
+    }
+    if ('requestId' in provenance && provenance.requestId !== null && !isNonEmptyString(provenance.requestId)) {
+      errors.push('Recorded model provenance requestId must be null or non-empty when present')
+    }
+  }
+  if ('realModelUsed' in provenance && provenance.realModelUsed !== derivedRealModelUsed) {
+    errors.push(`Theory provenance realModelUsed must be ${derivedRealModelUsed} for ${provenance.mode}`)
+  }
+  if (typeof realModelUsed === 'boolean' && realModelUsed !== derivedRealModelUsed) {
+    errors.push(`Theory capability realModelUsed must be ${derivedRealModelUsed} for ${provenance.mode}`)
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    provenance: structuredClone(provenance),
+    realModelUsed: derivedRealModelUsed,
+  }
 }
 
 function validateInputs(approvedExtractions, theoryCatalog) {
@@ -180,15 +255,16 @@ async function mapTheories({ provider, approvedExtractions, theoryCatalog, revie
   })
   const validation = validateTheoryMapping(generated.object, { approvedExtractions, theoryCatalog })
   if (!validation.valid) throw new TypeError(`Theory mapping failed validation: ${validation.errors.join('; ')}`)
+  const provenanceValidation = validateTheoryProvenance(generated.provenance)
+  if (!provenanceValidation.valid) {
+    throw new TypeError(`Theory provenance failed validation: ${provenanceValidation.errors.join('; ')}`)
+  }
   return {
     ...generated.object,
     reviewStatus: 'pending-human-review',
-    provenance: { ...(generated.provenance || {}) },
+    provenance: provenanceValidation.provenance,
     capabilities: {
-      realModelUsed: generated.provenance?.mode === 'live-model' &&
-        isNonEmptyString(generated.provenance?.provider) &&
-        isNonEmptyString(generated.provenance?.model) &&
-        isNonEmptyString(generated.provenance?.requestId),
+      realModelUsed: provenanceValidation.realModelUsed,
       closedTheoryCatalog: true,
       causalProof: false,
     },
@@ -200,4 +276,5 @@ module.exports = {
   buildTheoryMappingPrompt,
   mapTheories,
   validateTheoryMapping,
+  validateTheoryProvenance,
 }

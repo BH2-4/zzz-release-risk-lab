@@ -10,6 +10,7 @@ const {
   resumeTheoryAgent,
   startTheoryAgent,
 } = require('../src/theory-agent.js')
+const { digestValue } = require('../src/artifact-digest.js')
 
 const projectRoot = path.resolve(__dirname, '..')
 const defaults = Object.freeze({
@@ -61,13 +62,20 @@ function resolveProjectPath(relativePath, label) {
   return resolved
 }
 
-function readJson(relativePath, label) {
+function readJsonArtifact(relativePath, label) {
   const filePath = resolveProjectPath(relativePath, label)
   try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'))
+    return {
+      path: path.relative(projectRoot, filePath).split(path.sep).join('/'),
+      value: JSON.parse(fs.readFileSync(filePath, 'utf8')),
+    }
   } catch (error) {
     throw new TypeError(`${label} could not be read as JSON: ${error.message}`)
   }
+}
+
+function readJson(relativePath, label) {
+  return readJsonArtifact(relativePath, label).value
 }
 
 function writeJsonAtomic(relativePath, value) {
@@ -93,16 +101,18 @@ function loadInputs(env = process.env) {
 }
 
 function createFixtureProvider(env = process.env) {
-  const fixture = readJson(env.PROGRAM_E_THEORY_FIXTURE || defaults.fixtureMapping, 'Theory mapping fixture')
+  const fixture = readJsonArtifact(
+    env.PROGRAM_E_THEORY_FIXTURE || defaults.fixtureMapping,
+    'Theory mapping fixture',
+  )
   return Object.freeze({
     async generateObject() {
       return {
-        object: structuredClone(fixture),
+        object: structuredClone(fixture.value),
         provenance: {
           mode: 'deterministic-fixture',
-          provider: 'checked-in-fixture',
-          model: null,
-          requestId: null,
+          fixturePath: fixture.path,
+          fixtureDigest: digestValue(fixture.value),
         },
       }
     },
