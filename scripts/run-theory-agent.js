@@ -3,6 +3,7 @@
 
 const fs = require('node:fs')
 const path = require('node:path')
+const { randomUUID } = require('node:crypto')
 
 const { createOpenAICompatibleProvider } = require('../src/ai-provider.js')
 const {
@@ -97,15 +98,20 @@ function resolveInputPath(root, relativePath, label) {
 
 function readJsonArtifact(root, relativePath, label) {
   const inputPath = resolveInputPath(root, relativePath, label)
+  const safePath = path.relative(root, inputPath).split(path.sep).join('/')
+  let contents
   try {
-    return {
-      label,
-      path: inputPath,
-      value: JSON.parse(fs.readFileSync(inputPath, 'utf8')),
-    }
-  } catch (error) {
-    throw new TypeError(`${label} could not be read as JSON: ${error.message}`)
+    contents = fs.readFileSync(inputPath, 'utf8')
+  } catch {
+    throw new TypeError(`${label} could not be read at ${safePath}`)
   }
+  let value
+  try {
+    value = JSON.parse(contents)
+  } catch {
+    throw new TypeError(`${label} contains invalid JSON at ${safePath}`)
+  }
+  return { label, path: inputPath, value }
 }
 
 function inspectPath(pathname) {
@@ -169,13 +175,33 @@ function prepareRunOutput(root, relativePath, inputArtifacts) {
 }
 
 function writeJsonAtomic(root, relativePath, value) {
-  const filePath = resolveProjectPath(root, relativePath, 'Run output')
-  ensureSafeOutputParent(root, filePath)
-  assertSafeOutputTarget(filePath)
-  const temporaryPath = `${filePath}.tmp-${process.pid}`
-  fs.writeFileSync(temporaryPath, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600 })
-  fs.renameSync(temporaryPath, filePath)
-  return filePath
+  const outputPath = resolveProjectPath(root, relativePath, 'Run output')
+  const outputParent = ensureSafeOutputParent(root, outputPath)
+  assertSafeOutputTarget(outputPath)
+  const serialized = JSON.stringify(value, null, 2)
+  if (typeof serialized !== 'string') throw new TypeError('Theory run must be JSON serializable')
+  const temporaryPath = path.join(outputParent, `.${path.basename(outputPath)}.tmp-${process.pid}-${randomUUID()}`)
+  let fileDescriptor = null
+  try {
+    fileDescriptor = fs.openSync(temporaryPath, 'wx', 0o600)
+    fs.writeFileSync(fileDescriptor, `${serialized}\n`, 'utf8')
+    fs.fsyncSync(fileDescriptor)
+    fs.closeSync(fileDescriptor)
+    fileDescriptor = null
+
+    ensureSafeOutputParent(root, outputPath)
+    assertSafeOutputTarget(outputPath)
+    fs.renameSync(temporaryPath, outputPath)
+  } catch (error) {
+    if (fileDescriptor !== null) fs.closeSync(fileDescriptor)
+    try {
+      fs.unlinkSync(temporaryPath)
+    } catch (cleanupError) {
+      if (cleanupError.code !== 'ENOENT') throw cleanupError
+    }
+    throw error
+  }
+  return outputPath
 }
 
 function loadInputArtifacts(root, env = process.env) {
