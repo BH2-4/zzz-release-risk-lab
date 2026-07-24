@@ -10,7 +10,11 @@ const {
   startTheoryAgent,
   validateTheoryAgentRun,
 } = require('../src/theory-agent.js')
-const { validateEvidenceReview, validateTheorySystem } = require('../src/theory-system.js')
+const {
+  finalizeTheorySystem,
+  validateEvidenceReview,
+  validateTheorySystem,
+} = require('../src/theory-system.js')
 
 const verticalSliceExtractions = require('../data/evidence/extractions/zzz-1-4-fade-approved.json')
 const verticalSliceEvidenceReview = require('../data/evidence/reviews/zzz-1-4-fade-evidence-review.json')
@@ -264,6 +268,55 @@ test('approved mapping resumes into a content-addressed theory system', async ()
   const tampered = structuredClone(ready.theorySystem)
   tampered.approvedMappings[0].mechanism = 'Tampered mechanism.'
   assert.match(validateTheorySystem(tampered, input).errors.join('; '), /digest/i)
+})
+
+test('direct Theory System finalization rejects missing or non-boolean model capability', () => {
+  const input = fixtures()
+  const completeMapping = {
+    ...mapping(),
+    reviewStatus: 'pending-human-review',
+    provenance: {
+      mode: 'live-model',
+      provider: 'test',
+      model: 'mapping-model',
+      requestId: 'req-direct-finalize',
+    },
+    capabilities: {
+      realModelUsed: true,
+      closedTheoryCatalog: true,
+      causalProof: false,
+    },
+  }
+
+  for (const [label, capability] of [
+    ['missing', undefined],
+    ['string', 'true'],
+    ['numeric', 1],
+    ['object', { value: true }],
+  ]) {
+    const invalidMapping = structuredClone(completeMapping)
+    if (capability === undefined) delete invalidMapping.capabilities.realModelUsed
+    else invalidMapping.capabilities.realModelUsed = capability
+    const review = {
+      schemaVersion: 'theory-review/1.0',
+      targetDigest: digestValue(invalidMapping),
+      decision: 'approve',
+      mappingDecisions: [{
+        mappingId: 'mapping-framing-fade',
+        decision: 'approve',
+        reasonCodes: ['DIRECT_FINALIZATION_TEST'],
+      }],
+      reviewer: 'release-researcher',
+      reviewedAt: '2026-07-24T10:05:00+08:00',
+      feedback: [],
+    }
+
+    assert.throws(
+      () => finalizeTheorySystem({ mapping: invalidMapping, review, ...input }),
+      /capabilities.*boolean realModelUsed/i,
+      label,
+    )
+  }
 })
 
 test('catalog gaps block instead of forcing an inappropriate theory', async () => {

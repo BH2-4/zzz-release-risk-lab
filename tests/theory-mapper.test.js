@@ -160,6 +160,18 @@ test('theory provenance is a closed three-mode contract with derived model capab
     assert.equal(validation.realModelUsed, realModelUsed)
   }
 
+  const liveProvenance = validModes[1][0]
+  for (const [label, realModelUsed] of [
+    ['missing', undefined],
+    ['string', 'true'],
+    ['numeric', 1],
+    ['object', { value: true }],
+  ]) {
+    const validation = validateTheoryProvenance(liveProvenance, { realModelUsed })
+    assert.equal(validation.valid, false, `${label} capability must fail closed`)
+    assert.match(validation.errors.join('; '), /capability.*realModelUsed.*boolean/i)
+  }
+
   const fixtureDigest = digestValue(mapping())
   for (const [label, provenance, realModelUsed, pattern] of [
     ['missing fixture path', { mode: 'deterministic-fixture', fixtureDigest }, false, /fixturePath/i],

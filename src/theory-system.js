@@ -172,9 +172,12 @@ function finalizeTheorySystem({ mapping, review, approvedExtractions, evidenceRe
   if ([...approvedClaimIds].some((claimId) => !mappedClaimIds.has(claimId))) {
     throw new TypeError('Theory system requires every approved evidence claim to be mapped')
   }
+  if (typeof mapping.capabilities?.realModelUsed !== 'boolean') {
+    throw new TypeError('Theory mapping capabilities require boolean realModelUsed')
+  }
   const provenance = {
     ...structuredClone(mapping.provenance),
-    realModelUsed: mapping.capabilities?.realModelUsed === true,
+    realModelUsed: mapping.capabilities.realModelUsed,
   }
   const provenanceValidation = validateTheoryProvenance(provenance, {
     realModelUsed: mapping.capabilities?.realModelUsed,
