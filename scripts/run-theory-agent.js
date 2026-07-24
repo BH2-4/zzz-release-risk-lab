@@ -56,62 +56,162 @@ function parseArgs(argv) {
   return { command, options }
 }
 
-function resolveProjectPath(relativePath, label) {
-  const resolved = path.resolve(projectRoot, relativePath)
-  if (!resolved.startsWith(`${projectRoot}${path.sep}`)) throw new TypeError(`${label} path must stay inside the project`)
-  return resolved
+function isInsideProject(root, candidate, { allowRoot = false } = {}) {
+  const relative = path.relative(root, candidate)
+  if (relative === '') return allowRoot
+  return relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative)
 }
 
-function readJsonArtifact(relativePath, label) {
-  const filePath = resolveProjectPath(relativePath, label)
+function resolveRealProjectRoot(root) {
+  const resolved = path.resolve(root)
+  let realRoot
+  try {
+    realRoot = fs.realpathSync(resolved)
+  } catch (error) {
+    throw new TypeError(`Project root could not be resolved: ${error.message}`)
+  }
+  if (!fs.statSync(realRoot).isDirectory()) throw new TypeError('Project root must be a directory')
+  return realRoot
+}
+
+function resolveProjectPath(root, relativePath, label) {
+  if (typeof relativePath !== 'string' || relativePath.trim().length === 0) {
+    throw new TypeError(`${label} path is required`)
+  }
+  const candidate = path.resolve(root, relativePath)
+  if (!isInsideProject(root, candidate)) throw new TypeError(`${label} path must stay inside the project`)
+  return candidate
+}
+
+function resolveInputPath(root, relativePath, label) {
+  const lexicalPath = resolveProjectPath(root, relativePath, label)
+  let realPath
+  try {
+    realPath = fs.realpathSync(lexicalPath)
+  } catch (error) {
+    throw new TypeError(`${label} path could not be resolved: ${error.message}`)
+  }
+  if (!isInsideProject(root, realPath)) throw new TypeError(`${label} path resolves outside the project`)
+  return realPath
+}
+
+function readJsonArtifact(root, relativePath, label) {
+  const inputPath = resolveInputPath(root, relativePath, label)
   try {
     return {
-      path: path.relative(projectRoot, filePath).split(path.sep).join('/'),
-      value: JSON.parse(fs.readFileSync(filePath, 'utf8')),
+      label,
+      path: inputPath,
+      value: JSON.parse(fs.readFileSync(inputPath, 'utf8')),
     }
   } catch (error) {
     throw new TypeError(`${label} could not be read as JSON: ${error.message}`)
   }
 }
 
-function readJson(relativePath, label) {
-  return readJsonArtifact(relativePath, label).value
+function inspectPath(pathname) {
+  try {
+    return fs.lstatSync(pathname)
+  } catch (error) {
+    if (error.code === 'ENOENT') return null
+    throw error
+  }
 }
 
-function writeJsonAtomic(relativePath, value) {
-  const filePath = resolveProjectPath(relativePath, 'Run output')
-  fs.mkdirSync(path.dirname(filePath), { recursive: true })
+function ensureSafeOutputParent(root, outputPath) {
+  const parentPath = path.dirname(outputPath)
+  const relative = path.relative(root, parentPath)
+  const segments = relative === '' ? [] : relative.split(path.sep)
+  let current = root
+  for (const segment of segments) {
+    current = path.join(current, segment)
+    let stat = inspectPath(current)
+    if (!stat) {
+      fs.mkdirSync(current, { mode: 0o700 })
+      stat = fs.lstatSync(current)
+    }
+    if (stat.isSymbolicLink()) throw new TypeError(`Run output parent contains a symbolic link: ${segment}`)
+    if (!stat.isDirectory()) throw new TypeError(`Run output parent component is not a directory: ${segment}`)
+  }
+  const realParent = fs.realpathSync(parentPath)
+  if (!isInsideProject(root, realParent, { allowRoot: true })) {
+    throw new TypeError('Run output parent resolves outside the project')
+  }
+  return realParent
+}
+
+function assertSafeOutputTarget(outputPath) {
+  const stat = inspectPath(outputPath)
+  if (!stat) return
+  if (stat.isSymbolicLink()) throw new TypeError('Run output target must not be a symbolic link')
+  if (!stat.isFile()) throw new TypeError('Run output target must be a regular file')
+}
+
+function assertOutputDoesNotOverwriteInput(root, relativePath, inputArtifacts) {
+  const outputPath = resolveProjectPath(root, relativePath, 'Run output')
+  const candidatePaths = new Set([outputPath])
+  const outputStat = inspectPath(outputPath)
+  if (outputStat && !outputStat.isSymbolicLink()) candidatePaths.add(fs.realpathSync(outputPath))
+  const collision = inputArtifacts.find((artifact) => {
+    if (candidatePaths.has(artifact.path)) return true
+    if (!outputStat || outputStat.isSymbolicLink()) return false
+    const inputStat = fs.statSync(artifact.path)
+    return outputStat.dev === inputStat.dev && outputStat.ino === inputStat.ino
+  })
+  if (collision) throw new TypeError(`Run output must not overwrite the ${collision.label} input artifact`)
+}
+
+function prepareRunOutput(root, relativePath, inputArtifacts) {
+  const outputPath = resolveProjectPath(root, relativePath, 'Run output')
+  ensureSafeOutputParent(root, outputPath)
+  assertSafeOutputTarget(outputPath)
+  assertOutputDoesNotOverwriteInput(root, relativePath, inputArtifacts)
+  return outputPath
+}
+
+function writeJsonAtomic(root, relativePath, value) {
+  const filePath = resolveProjectPath(root, relativePath, 'Run output')
+  ensureSafeOutputParent(root, filePath)
+  assertSafeOutputTarget(filePath)
   const temporaryPath = `${filePath}.tmp-${process.pid}`
   fs.writeFileSync(temporaryPath, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600 })
   fs.renameSync(temporaryPath, filePath)
   return filePath
 }
 
-function loadInputs(env = process.env) {
-  const approvedExtractions = readJson(env.PROGRAM_E_THEORY_EXTRACTIONS || defaults.extractions, 'Approved extractions')
-  if (!Array.isArray(approvedExtractions) || approvedExtractions.length === 0) {
+function loadInputArtifacts(root, env = process.env) {
+  const artifacts = {
+    approvedExtractions: readJsonArtifact(root, env.PROGRAM_E_THEORY_EXTRACTIONS || defaults.extractions, 'Approved extractions'),
+    evidenceReview: readJsonArtifact(root, env.PROGRAM_E_EVIDENCE_REVIEW || defaults.evidenceReview, 'Evidence review'),
+    ledger: readJsonArtifact(root, env.PROGRAM_E_EVIDENCE_LEDGER || defaults.ledger, 'Evidence ledger'),
+    theoryCatalog: readJsonArtifact(root, env.PROGRAM_E_THEORY_CATALOG || defaults.theoryCatalog, 'Theory catalog'),
+  }
+  if (!Array.isArray(artifacts.approvedExtractions.value) || artifacts.approvedExtractions.value.length === 0) {
     throw new TypeError('Approved extractions file must contain a non-empty array')
   }
+  return artifacts
+}
+
+function inputValues(artifacts) {
   return {
-    approvedExtractions,
-    evidenceReview: readJson(env.PROGRAM_E_EVIDENCE_REVIEW || defaults.evidenceReview, 'Evidence review'),
-    ledger: readJson(env.PROGRAM_E_EVIDENCE_LEDGER || defaults.ledger, 'Evidence ledger'),
-    theoryCatalog: readJson(env.PROGRAM_E_THEORY_CATALOG || defaults.theoryCatalog, 'Theory catalog'),
+    approvedExtractions: artifacts.approvedExtractions.value,
+    evidenceReview: artifacts.evidenceReview.value,
+    ledger: artifacts.ledger.value,
+    theoryCatalog: artifacts.theoryCatalog.value,
   }
 }
 
-function createFixtureProvider(env = process.env) {
-  const fixture = readJsonArtifact(
-    env.PROGRAM_E_THEORY_FIXTURE || defaults.fixtureMapping,
-    'Theory mapping fixture',
-  )
+function loadFixtureArtifact(root, env = process.env) {
+  return readJsonArtifact(root, env.PROGRAM_E_THEORY_FIXTURE || defaults.fixtureMapping, 'Theory mapping fixture')
+}
+
+function createFixtureProvider(root, env = process.env, fixture = loadFixtureArtifact(root, env)) {
   return Object.freeze({
     async generateObject() {
       return {
         object: structuredClone(fixture.value),
         provenance: {
           mode: 'deterministic-fixture',
-          fixturePath: fixture.path,
+          fixturePath: path.relative(root, fixture.path).split(path.sep).join('/'),
           fixtureDigest: digestValue(fixture.value),
         },
       }
@@ -119,8 +219,8 @@ function createFixtureProvider(env = process.env) {
   })
 }
 
-function createProvider({ demo }, env = process.env) {
-  if (demo) return createFixtureProvider(env)
+function createProvider({ demo }, root, env = process.env, fixture) {
+  if (demo) return createFixtureProvider(root, env, fixture)
   return createOpenAICompatibleProvider({
     baseUrl: env.PROGRAM_E_AI_BASE_URL,
     apiKey: env.PROGRAM_E_AI_API_KEY,
@@ -147,23 +247,31 @@ function summarize(run) {
 async function runCommand({ argv = process.argv.slice(2), env = process.env, now = new Date().toISOString() } = {}) {
   const { command, options } = parseArgs(argv)
   if (!command || ['help', '-h', '--help'].includes(command)) return { kind: 'help', text: usage() }
+  const realRoot = resolveRealProjectRoot(projectRoot)
   const runRelative = options.run || env.PROGRAM_E_THEORY_RUN || defaults.run
 
   if (command === 'start') {
-    const runPath = resolveProjectPath(runRelative, 'Run output')
-    if (fs.existsSync(runPath) && !options.replace) throw new TypeError('Theory run already exists; pass --replace to start a new run explicitly')
+    const inputArtifacts = loadInputArtifacts(realRoot, env)
+    const fixtureArtifact = loadFixtureArtifact(realRoot, env)
+    const runPath = prepareRunOutput(realRoot, runRelative, [...Object.values(inputArtifacts), fixtureArtifact])
+    if (inspectPath(runPath) && !options.replace) throw new TypeError('Theory run already exists; pass --replace to start a new run explicitly')
     const run = await startTheoryAgent({
-      ...loadInputs(env),
-      provider: createProvider(options, env),
+      ...inputValues(inputArtifacts),
+      provider: createProvider(options, realRoot, env, fixtureArtifact),
       runId: `zzz-fade-${now.replace(/[^0-9]/g, '').slice(0, 14)}`,
       now,
     })
-    writeJsonAtomic(runRelative, run)
+    writeJsonAtomic(realRoot, runRelative, run)
     return { kind: 'run', summary: summarize(run), path: runRelative }
   }
 
-  const run = readJson(runRelative, 'Theory run')
+  const runArtifact = readJsonArtifact(realRoot, runRelative, 'Theory run')
+  const run = runArtifact.value
   if (command === 'status') return { kind: 'run', summary: summarize(run), path: runRelative }
+
+  const inputArtifacts = loadInputArtifacts(realRoot, env)
+  const fixtureArtifact = loadFixtureArtifact(realRoot, env)
+  prepareRunOutput(realRoot, runRelative, [...Object.values(inputArtifacts), fixtureArtifact])
 
   if (command === 'review') {
     const decision = options.decision
@@ -189,15 +297,17 @@ async function runCommand({ argv = process.argv.slice(2), env = process.env, now
         feedback: options.feedback ? [options.feedback] : [],
       },
     })
-    writeJsonAtomic(runRelative, reviewed)
+    writeJsonAtomic(realRoot, runRelative, reviewed)
     return { kind: 'run', summary: summarize(reviewed), path: runRelative }
   }
 
   if (command === 'resume') {
-    const inputs = loadInputs(env)
-    const provider = run.state === 'REVISION_REQUESTED' ? createProvider(options, env) : undefined
+    const inputs = inputValues(inputArtifacts)
+    const provider = run.state === 'REVISION_REQUESTED'
+      ? createProvider(options, realRoot, env, fixtureArtifact)
+      : undefined
     const resumed = await resumeTheoryAgent({ run, provider, ...inputs, now })
-    writeJsonAtomic(runRelative, resumed)
+    writeJsonAtomic(realRoot, runRelative, resumed)
     return { kind: 'run', summary: summarize(resumed), path: runRelative }
   }
 
