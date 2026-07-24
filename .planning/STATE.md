@@ -6,7 +6,7 @@ current_phase: 1
 current_phase_name: Trustworthy Theory Pipeline
 status: executing
 stopped_at: Completed ZZZ-01-02-PLAN.md
-last_updated: "2026-07-24T03:00:50Z"
+last_updated: "2026-07-24T03:19:56.778Z"
 last_activity: 2026-07-24
 last_activity_desc: Phase 1 execution started
 progress:
@@ -67,7 +67,10 @@ Progress: [█████░░░░░] 50%
 - [Phase ZZZ-01]: Bound filesystem concurrency guarantees to local single-user cooperating CLI writers that acquire the parent-directory flock; do not claim hostile same-UID filesystem CAS safety.
 - [Phase ZZZ-01]: Reconcile the run output transaction before reading the run for every status, review, and resume command.
 - [Phase ZZZ-01]: Adopt unique revisioned journal updates and retain published journals until caller acknowledgement.
-- [Phase ZZZ-01]: Commit to a complete local macOS MVP demonstration while retaining existing Ubuntu CI compatibility without private filesystem syscalls.
+- [Project]: The competition MVP supports the current macOS demo machine; non-macOS support and cross-platform verification are post-competition.
+- [Project]: Delivery is PR-first: independent review and all three local gates must pass before pushing the feature branch; known-red work never goes to main.
+- [Project]: The current Ubuntu GitHub Actions job has no competition acceptance authority; the pre-competition PR gate will be one macOS target-platform job, while non-macOS CI and cross-platform verification remain post-competition.
+- [Project]: The competition path reuses the deterministic 125-representative simulation and 3D replay; hybrid cognition and emergent Reverse/relationship channels are post-competition.
 
 ### Pending Todos
 
@@ -77,7 +80,7 @@ None yet.
 
 - The six locked CLI tests, 17 race/recovery tests, and 45 focused Theory tests are green at `3b17daf`; independent review plus fresh build/full/E2E gates remain with the orchestrator before PR publication.
 - No model key or real model output is available for Phase 2.
-- Phase 5 contains externally consequential wallet actions and cannot auto-execute.
+- Phase 3 contains externally consequential wallet actions and cannot auto-execute.
 
 ## Deferred Items
 
@@ -87,6 +90,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-24T03:00:50Z
-Stopped at: Completed ZZZ-01-02-PLAN.md
+Last session: 2026-07-24T04:45:50Z
+Stopped at: Goal resumed; proceeding to independent 01-02 review and fresh local gates before 01-03
 Resume file: None

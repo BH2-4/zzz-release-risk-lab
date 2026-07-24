@@ -4,22 +4,20 @@
 
 ## Overview
 
-The milestone first restores a trustworthy, fully green evidence/Theory Agent baseline. It then adds one real model compilation, a bounded hybrid society runtime, truthful 3D evolution, an explicitly confirmed Injective audit record, and a field-ready competition path.
+The competition milestone restores a trustworthy Theory Agent baseline, performs one fixed-case real-model compilation, reuses the existing deterministic simulation and 3D observer, adds an explicitly confirmed Injective testnet record, and packages one field-ready macOS path. Hybrid Agent emergence, new runtime-driven 3D channels, scenario generalization, and cross-platform support are post-competition iterations.
 
 ## Phases
 
 - [ ] **Phase 1: Trustworthy Theory Pipeline** - Fix current CLI security/provenance regressions and regenerate authoritative Theory System output.
-- [ ] **Phase 2: Real Evidence-Bound AI Compilation** - Produce and validate one attributable real-model scenario artifact across the target language boundary.
-- [ ] **Phase 3: Hybrid Agent Society** - Add bounded cognition and public-expression anchors to the reproducible 125-representative, 42-day runtime.
-- [ ] **Phase 4: Runtime-Driven 3D Evolution** - Replay truthful front, Reverse, relation, and event channels from the new runtime.
-- [ ] **Phase 5: Injective Testnet Audit** - Complete the user-confirmed contract and commitment proof on testnet.
-- [ ] **Phase 6: Field Demo Closure** - Package, test, and rehearse the complete 3-5 minute competition workflow.
+- [ ] **Phase 2: Fixed-Case Evidence-Bound AI Compilation** - Produce and validate one attributable real-model artifact for the frozen 1.4/3.1 slice.
+- [ ] **Phase 3: Injective Testnet Audit** - Complete one user-confirmed commitment proof for the fixed run.
+- [ ] **Phase 4: Mac Field Demo Closure** - Reuse the verified simulation and 3D observer in a tested 3-5 minute macOS workflow and ship it through a PR.
 
 ## Phase Details
 
 ### Phase 1: Trustworthy Theory Pipeline
 
-**Goal**: Maintainers can safely generate and compile an authoritative reviewed Theory System with a completely green local quality gate.
+**Goal**: Maintainers can safely generate and compile an authoritative reviewed Theory System with a completely green quality gate on the competition macOS machine.
 **Depends on**: Nothing
 **Requirements**: TRUST-01, TRUST-02, TRUST-03, TRUST-04
 **Success Criteria**:
@@ -51,78 +49,57 @@ The milestone first restores a trustworthy, fully green evidence/Theory Agent ba
 
 - [ ] `01-04`: Full quality gates and closure evidence
 
-### Phase 2: Real Evidence-Bound AI Compilation
+### Phase 2: Fixed-Case Evidence-Bound AI Compilation
 
-**Goal**: An analyst can produce one real-model compiled scenario whose facts, assumptions, theories, and provenance remain auditable.
+**Goal**: An analyst can produce one real-model compiled artifact for the frozen 1.4 fade / 3.1 synthetic-counterfactual slice whose facts, assumptions, theories, and provenance remain auditable.
 **Depends on**: Phase 1
 **Requirements**: AI-01, AI-02, AI-03, AI-04
 **Success Criteria**:
 
   1. A trusted Node invocation completes a real structured model request without exposing the key.
   2. Invalid citations, theories, regional differences, or provenance fail closed before simulation.
-  3. The artifact and model card distinguish direct multilingual evidence, translation, and synthetic assumptions.
+  3. The artifact and model card distinguish direct multilingual evidence, translation, and synthetic assumptions; arbitrary cases and generalized inputs remain disabled.
 
 **Plans**: TBD
 
-### Phase 3: Hybrid Agent Society
+### Phase 3: Injective Testnet Audit
 
-**Goal**: Operators can compare two strategies through a reproducible 42-day society with bounded cognition and inspectable mechanisms.
+**Goal**: A user can deliberately create and publicly verify one testnet commitment for the fixed completed run.
 **Depends on**: Phase 2
-**Requirements**: AGENT-01, AGENT-02, AGENT-03, AGENT-04
-**Success Criteria**:
-
-  1. Every synthetic representative carries validated stance, goal, memory, relationship, and public-expression state.
-  2. Shared-seed baseline/candidate runs are reproducible and expose paired mechanism and sensitivity differences.
-  3. AI calls remain bounded to anchor decisions and never emit a final crisis probability.
-
-**Plans**: TBD
-
-### Phase 4: Runtime-Driven 3D Evolution
-
-**Goal**: Reviewers can understand how the new run evolves over time and through relationships without confusing unavailable or synthetic channels with observed data.
-**Depends on**: Phase 3
-**Requirements**: VIS-01, VIS-02, VIS-03
-**Success Criteria**:
-
-  1. The observer replays all 42 days of front, Reverse, relation, pressure, and event data from a verified new-runtime artifact.
-  2. Baseline, candidate, and delta views remain inspectable on desktop and mobile.
-  3. Every view labels provenance and unavailable channels and remains nonblank under canvas pixel checks.
-
-**Plans**: TBD
-
-### Phase 5: Injective Testnet Audit
-
-**Goal**: A user can deliberately create and publicly verify one testnet commitment for a completed run.
-**Depends on**: Phase 4
 **Requirements**: CHAIN-01, CHAIN-02, CHAIN-03
 **Success Criteria**:
 
   1. The wallet confirms Injective EVM Testnet and exact contract deployment or selection before signing.
   2. Blockscout shows matching runtime bytecode, a successful receipt, and the expected `RiskCommitted` event.
-  3. Public audit metadata is recorded without any private key, mnemonic, or mainnet action.
+  3. Public audit metadata is recorded without any private key, mnemonic, mainnet action, or automatic transaction.
 
 **Plans**: TBD
 
-### Phase 6: Field Demo Closure
+### Phase 4: Mac Field Demo Closure
 
-**Goal**: A competition reviewer can run and understand the complete MVP within the allotted pitch window, including an offline fallback.
-**Depends on**: Phase 5
+**Goal**: A competition reviewer can run and understand the fixed MVP on the current macOS demo machine within the allotted pitch window, including an offline fallback.
+**Depends on**: Phase 3
 **Requirements**: DEMO-01, DEMO-02
 **Success Criteria**:
 
-  1. A reviewer completes the evidence, strategy comparison, 3D evolution, and audit narrative in 3-5 minutes.
-  2. Offline fallback, model card, test report, and submission explanation match the shipped behavior and boundaries.
-  3. Full build, Node, and E2E gates pass from the final public repository state.
+  1. A reviewer completes the evidence, strategy comparison, existing 42-day replay, 3D explanation, and audit narrative in 3-5 minutes on the target Mac.
+  2. Existing deterministic simulation and replay are labeled as baselines, not hybrid cognitive Agent emergence or real-player prediction.
+  3. Independent review, `npm run build`, `npm test`, and `npm run test:e2e` are green on the current competition Mac before the feature branch is pushed; one macOS GitHub Actions job repeats the target-platform gates before merge, with no Linux/Windows matrix or cross-platform claim.
 
 **Plans**: TBD
+
+## Post-Competition Iterations
+
+- Hybrid Agent Society: bounded stance, goals, memory, relationships, public-expression state, and AI anchor decisions.
+- Runtime-Driven 3D Evolution: relationship propagation, Reverse voice, and event channels generated by the new runtime.
+- Cross-Platform Delivery: non-macOS product support, Linux/Windows jobs, CI operating-system matrices, browser/platform compatibility, and actual cross-platform verification.
+- Generalized Evidence Intake: additional ZZZ cases and arbitrary public inputs only after the same evidence gates pass.
 
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Trustworthy Theory Pipeline | 2/4 | In Progress | - |
-| 2. Real Evidence-Bound AI Compilation | 0/TBD | Not started | - |
-| 3. Hybrid Agent Society | 0/TBD | Not started | - |
-| 4. Runtime-Driven 3D Evolution | 0/TBD | Not started | - |
-| 5. Injective Testnet Audit | 0/TBD | Not started | - |
-| 6. Field Demo Closure | 0/TBD | Not started | - |
+| 2. Fixed-Case Evidence-Bound AI Compilation | 0/TBD | Not started | - |
+| 3. Injective Testnet Audit | 0/TBD | Not started | - |
+| 4. Mac Field Demo Closure | 0/TBD | Not started | - |

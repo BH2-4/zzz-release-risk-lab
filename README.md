@@ -1,6 +1,6 @@
 # ZZZ Release Risk Lab / 绝区零地区发行风险沙盘
 
-> ProgramE · 真正 AI MVP 建设中 · 3D 演化观察器数据 Beta 0.4 · 非官方研究原型
+> ProgramE · macOS 比赛 MVP 建设中 · 固定案例 · 3D 演化观察器数据 Beta 0.4 · 非官方研究原型
 
 一个用社会学理论、公开历史案例和合成利益相关者，对《绝区零》下一个 42 天全球发行周期进行情景压力测试的 MVP。当前默认问题已经收窄为：复演 1.4 的“特定视角渐隐”事件，再把同一机制迁移到 3.1 露西时装的合成反事实中。
 
@@ -26,6 +26,8 @@
 - 不对国家、族群或文化群体贴本质化标签；没有直接地区证据时系数一律为 `1.0`，技术夹具也不得用于地区结论。
 - Injective 只使用测试网与无经济价值的测试代币；不保存私钥，不实现现金或投机市场。
 - 项目与米哈游、HoYoverse 和 Injective 无隶属或授权关系。
+- 赛前目标平台与验收边界只覆盖当前 macOS 演示机；PR 复验目标是单一 macOS CI job，但当前 workflow 仍是 Ubuntu，需先迁移到 macOS runner。跨平台适配、非 macOS jobs 与复验属于赛后迭代。
+- 赛前复用现有确定性 125 代表推演和 3D 回放，不宣称已经实现混合认知 Agent 或能力涌现。
 
 ## 双赛道验收
 
@@ -50,12 +52,13 @@
 - [x] 机器可验证的公开证据账本、11 项学术理论目录与三语目标契约
 - [x] OpenAI-compatible BYOK 适配器与证据受限情景编译契约
 - [ ] 使用真实模型完成一次有来源的情景编译（当前没有模型 Key）
-- [ ] 具备立场、目标、记忆、关系与公开表达的混合 Agent 运行时
-- [ ] 由新运行时驱动 Reverse 声量与关系传播的 3D 回放
+- [ ] 赛后：具备立场、目标、记忆、关系与公开表达的混合 Agent 运行时
+- [ ] 赛后：由新运行时驱动 Reverse 声量与关系传播的 3D 回放
+- [ ] 赛后：非 macOS 平台适配、CI 矩阵与跨平台复验
 - [ ] Injective 测试网承诺记录
 - [x] 公开 GitHub 仓库
 
-当前 Theory Agent 的可复现实例使用仓库内确定性夹具，制品明确记录 `realModelUsed: false`。已有的公式模型和 3D 页面也是技术基线；二者都不等于真实模型编译或真实多 Agent 运行时。完整定义与逐项门槛见 [真正 AI MVP 规格](docs/mvp-v1-spec.md)。
+当前 Theory Agent 的可复现实例使用仓库内确定性夹具，制品明确记录 `realModelUsed: false`。已有的公式模型和 3D 页面是比赛 Mac MVP 复用的技术基线；二者都不等于真实模型编译、混合认知 Agent 或能力涌现。当前路线见 [比赛 Mac MVP 大纲](docs/competition-mac-mvp-outline.md)，逐项门槛见 [比赛 Mac MVP 规格](docs/mvp-v1-spec.md)。
 
 ## 提交材料
 
@@ -64,7 +67,8 @@
 - [可直接播放的路演 Beta 0.1](roadshow/beta0.1/index.html)
 - [Beta 0.1 完整讲稿](roadshow/beta0.1/speaker-notes.md)
 - [系统架构与信任边界](docs/architecture.md)
-- [真正 AI MVP 规格](docs/mvp-v1-spec.md)
+- [比赛 Mac MVP 大纲](docs/competition-mac-mvp-outline.md)
+- [比赛 Mac MVP 规格](docs/mvp-v1-spec.md)
 - [3D 前端可视化数据契约](docs/visualization-data-contract.md)
 - [3D 引擎选型记录](docs/3d-engine-decision.md)
 - [OpenGSD 接入边界](docs/opengsd-adoption.md)

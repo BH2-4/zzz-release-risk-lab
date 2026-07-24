@@ -1,14 +1,14 @@
 {
   "schemaVersion": "theory-agent-run/1.0",
-  "runId": "zzz-fade-20260723174818",
+  "runId": "zzz-fade-20260724045215",
   "state": "READY_FOR_COMPILATION",
   "revision": 3,
   "attempt": 1,
   "maxAttempts": 2,
   "inputDigests": {
-    "approvedExtractions": "sha256:324ab85864ddf0a3636ad4458e89f58070204339bf15a543e34fdf0ec57a167e",
-    "evidenceReview": "sha256:71a61e7ac5054174ae4acc7591191d8504db57d4cd7bd4396776f5345f1449f4",
-    "ledger": "sha256:f45201e1d9ac8432accfabe6938099ddb60aed857b3ddb38da168fe7752507cb",
+    "approvedExtractions": "sha256:f9a216da460893abc01de40844295e51a2f638f89a292056420bb24f87ea1ec1",
+    "evidenceReview": "sha256:493e99eaf49090ee48211fed824a91d78af8d922db3f6c3e456656e5da1762d8",
+    "ledger": "sha256:f3c80f1881c2e75583a0cd76c20ba5df6f5e603de926361ceb6b1e6ba6690e05",
     "theoryCatalog": "sha256:9296e439d7a610302bc7e0ae19afc7c95697af99d4a85265cb2f73ca9b93f3e6"
   },
   "mapping": {
@@ -120,9 +120,8 @@
     "reviewStatus": "pending-human-review",
     "provenance": {
       "mode": "deterministic-fixture",
-      "provider": "checked-in-fixture",
-      "model": null,
-      "requestId": null
+      "fixturePath": "data/theory-agent/zzz-1-4-fade-mapping-fixture.json",
+      "fixtureDigest": "sha256:76e6880eff48c263f8481ad2440ebdc2068dc1b8f0b5878c3bba5ea31905aea2"
     },
     "capabilities": {
       "realModelUsed": false,
@@ -133,7 +132,7 @@
   "audit": {
     "schemaVersion": "theory-audit/1.0",
     "status": "pass",
-    "mappingDigest": "sha256:d00b36f299b44988a7e12f4ad0b8968061ef03bc7fb0c742fe1b3b4099228d86",
+    "mappingDigest": "sha256:10ec66acb02748c60315d1cdaf1b5fb80077c01bc666665c7d59413dbcd32606",
     "mappedClaimProposalIds": [
       "proposal-3-1-lucy-outfit-official",
       "proposal-fade-adjustment-fix",
@@ -149,7 +148,7 @@
   "checkpoint": null,
   "review": {
     "schemaVersion": "theory-review/1.0",
-    "targetDigest": "sha256:d00b36f299b44988a7e12f4ad0b8968061ef03bc7fb0c742fe1b3b4099228d86",
+    "targetDigest": "sha256:10ec66acb02748c60315d1cdaf1b5fb80077c01bc666665c7d59413dbcd32606",
     "decision": "approve",
     "mappingDecisions": [
       {
@@ -182,14 +181,14 @@
       }
     ],
     "reviewer": "manual-demo-curator",
-    "reviewedAt": "2026-07-23T17:48:40.906Z",
+    "reviewedAt": "2026-07-24T04:52:25.180Z",
     "feedback": [],
-    "id": "theory-review:sha256:a75d1c644277936b9500d0f7e8c7a42fa5330a757b2cdccd4f64295bb29617a3"
+    "id": "theory-review:sha256:76266eae898c2a664d5ffff91ebb1fbba0aced2dfa8d24413823fd7544f0f70e"
   },
   "reviews": [
     {
       "schemaVersion": "theory-review/1.0",
-      "targetDigest": "sha256:d00b36f299b44988a7e12f4ad0b8968061ef03bc7fb0c742fe1b3b4099228d86",
+      "targetDigest": "sha256:10ec66acb02748c60315d1cdaf1b5fb80077c01bc666665c7d59413dbcd32606",
       "decision": "approve",
       "mappingDecisions": [
         {
@@ -222,9 +221,9 @@
         }
       ],
       "reviewer": "manual-demo-curator",
-      "reviewedAt": "2026-07-23T17:48:40.906Z",
+      "reviewedAt": "2026-07-24T04:52:25.180Z",
       "feedback": [],
-      "id": "theory-review:sha256:a75d1c644277936b9500d0f7e8c7a42fa5330a757b2cdccd4f64295bb29617a3"
+      "id": "theory-review:sha256:76266eae898c2a664d5ffff91ebb1fbba0aced2dfa8d24413823fd7544f0f70e"
     }
   ],
   "catalogGap": null,
@@ -232,9 +231,9 @@
     "schemaVersion": "theory-system/1.0",
     "status": "approved",
     "catalogDigest": "sha256:9296e439d7a610302bc7e0ae19afc7c95697af99d4a85265cb2f73ca9b93f3e6",
-    "ledgerDigest": "sha256:f45201e1d9ac8432accfabe6938099ddb60aed857b3ddb38da168fe7752507cb",
-    "evidenceReviewDigest": "sha256:71a61e7ac5054174ae4acc7591191d8504db57d4cd7bd4396776f5345f1449f4",
-    "mappingDigest": "sha256:d00b36f299b44988a7e12f4ad0b8968061ef03bc7fb0c742fe1b3b4099228d86",
+    "ledgerDigest": "sha256:f3c80f1881c2e75583a0cd76c20ba5df6f5e603de926361ceb6b1e6ba6690e05",
+    "evidenceReviewDigest": "sha256:493e99eaf49090ee48211fed824a91d78af8d922db3f6c3e456656e5da1762d8",
+    "mappingDigest": "sha256:10ec66acb02748c60315d1cdaf1b5fb80077c01bc666665c7d59413dbcd32606",
     "approvedMappings": [
       {
         "id": "mapping-framing-display-versus-access",
@@ -338,47 +337,46 @@
     ],
     "review": {
       "schemaVersion": "theory-review/1.0",
-      "targetDigest": "sha256:d00b36f299b44988a7e12f4ad0b8968061ef03bc7fb0c742fe1b3b4099228d86",
+      "targetDigest": "sha256:10ec66acb02748c60315d1cdaf1b5fb80077c01bc666665c7d59413dbcd32606",
       "decision": "approve",
       "reviewer": "manual-demo-curator",
-      "reviewedAt": "2026-07-23T17:48:40.906Z"
+      "reviewedAt": "2026-07-24T04:52:25.180Z"
     },
     "provenance": {
       "mode": "deterministic-fixture",
-      "provider": "checked-in-fixture",
-      "model": null,
-      "requestId": null,
+      "fixturePath": "data/theory-agent/zzz-1-4-fade-mapping-fixture.json",
+      "fixtureDigest": "sha256:76e6880eff48c263f8481ad2440ebdc2068dc1b8f0b5878c3bba5ea31905aea2",
       "realModelUsed": false
     },
-    "id": "theory-system:sha256:5c22be0df832eacac9f41664c8905580f8f7d19223ce294d8be677631186f8f2"
+    "id": "theory-system:sha256:432e0f6273403bb3f4cae5afaac4ba61c6dde9a8e4e5e2b118a58c9427e84912"
   },
   "events": [
     {
       "revision": 1,
       "state": "AWAITING_HUMAN",
-      "at": "2026-07-23T17:48:18.034Z",
+      "at": "2026-07-24T04:52:15.465Z",
       "summary": "Deterministic audit passed; human theory review is required.",
       "artifactDigests": [
-        "sha256:d00b36f299b44988a7e12f4ad0b8968061ef03bc7fb0c742fe1b3b4099228d86",
-        "sha256:9ef99acd1a60c088c81f044ea306b2c5f1f7bf448dd7a9ffa6a21142769f7ef2"
+        "sha256:10ec66acb02748c60315d1cdaf1b5fb80077c01bc666665c7d59413dbcd32606",
+        "sha256:a8e53bcacce78b2790aa7418867e2f4392b80ceabf80d6d06d3f6f5884dd84fd"
       ]
     },
     {
       "revision": 2,
       "state": "APPROVED",
-      "at": "2026-07-23T17:48:40.906Z",
+      "at": "2026-07-24T04:52:25.180Z",
       "summary": "Human review decision: approve.",
       "artifactDigests": [
-        "sha256:5133bc03b264d7d2c063aa951934dfda5eb51220db8b9568a0dd07fd0e238203"
+        "sha256:85fcbf1c102865a120f4fc512ba8797c7390fd37e544c77efb2c644493dd8e58"
       ]
     },
     {
       "revision": 3,
       "state": "READY_FOR_COMPILATION",
-      "at": "2026-07-23T17:48:46.563Z",
+      "at": "2026-07-24T04:52:33.604Z",
       "summary": "Approved mapping finalized for scenario compilation.",
       "artifactDigests": [
-        "sha256:0e35224b9bf15c983a0c816b3bf227443dfb7996d78bdccaf34b7e7ed2d8d89e"
+        "sha256:98f5cc12b66944d0326c255c7a73d7482a47846ab9e7ddd74610a093ba338fdc"
       ]
     }
   ],

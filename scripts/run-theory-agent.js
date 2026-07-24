@@ -188,7 +188,7 @@ function inspectPath(pathname) {
   }
 }
 
-function ensureSafeOutputParent(root, outputPath) {
+function ensureSafeOutputParent(root, outputPath, { createMissing = true } = {}) {
   const parentPath = path.dirname(outputPath)
   const relative = path.relative(root, parentPath)
   const segments = relative === '' ? [] : relative.split(path.sep)
@@ -197,6 +197,7 @@ function ensureSafeOutputParent(root, outputPath) {
     current = path.join(current, segment)
     let stat = inspectPath(current)
     if (!stat) {
+      if (!createMissing) throw new TypeError('Run output parent does not exist')
       fs.mkdirSync(current, { mode: 0o700 })
       stat = fs.lstatSync(current)
     }
@@ -298,10 +299,10 @@ function assertOutputDoesNotOverwriteInput(output, inputArtifacts) {
   if (collision) throw new TypeError(`Run output must not overwrite the ${collision.label} input artifact`)
 }
 
-function prepareRunOutput(root, relativePath, inputArtifacts) {
+function prepareRunOutput(root, relativePath, inputArtifacts, { createMissingParent = true } = {}) {
   const outputPath = resolveProjectPath(root, relativePath, 'Run output')
   const parentPath = path.dirname(outputPath)
-  const realParent = ensureSafeOutputParent(root, outputPath)
+  const realParent = ensureSafeOutputParent(root, outputPath, { createMissing: createMissingParent })
   const expectedParentStat = fs.statSync(realParent)
   const parentIdentity = { dev: String(expectedParentStat.dev), ino: String(expectedParentStat.ino) }
   let parentDescriptor = null
@@ -518,7 +519,7 @@ async function runCommand({
       }
     }
 
-    const output = prepareRunOutput(realRoot, runRelative, [])
+    const output = prepareRunOutput(realRoot, runRelative, [], { createMissingParent: false })
     try {
       const runArtifact = readJsonArtifact(inputContext, runRelative, 'Theory run')
       const run = runArtifact.value

@@ -35,7 +35,7 @@ The agent may choose helper names, internal function boundaries, and exact safe 
 - Real model invocation and recorded-model replay belong to Phase 2.
 - Hybrid memory, relationships, public expression, and Reverse generation belong to Phase 3.
 - 3D integration belongs to Phase 4.
-- Injective deployment or transaction execution belongs to Phase 5 and remains user-confirmed.
+- Injective deployment or transaction execution belongs to Phase 3 and remains user-confirmed.
 </user_constraints>
 
 <phase_requirements>
