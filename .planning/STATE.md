@@ -6,7 +6,7 @@ current_phase: 1
 current_phase_name: Trustworthy Theory Pipeline
 status: executing
 stopped_at: Completed ZZZ-01-02-PLAN.md
-last_updated: "2026-07-24T01:21:42.404Z"
+last_updated: "2026-07-24T02:13:38Z"
 last_activity: 2026-07-24
 last_activity_desc: Phase 1 execution started
 progress:
@@ -38,9 +38,9 @@ Progress: [█████░░░░░] 50%
 
 **Velocity:**
 
-- Total plans completed: 0
-- Average duration: Not available
-- Total execution time: 0 hours
+- Total plans completed: 2
+- Average duration: 45.5 min
+- Total execution time: 1.5 hours
 
 **By Phase:** No completed phases.
 **Per-Plan Metrics:**
@@ -48,7 +48,7 @@ Progress: [█████░░░░░] 50%
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase ZZZ-01 P01 | 7 min | 2 tasks | 6 files |
-| Phase ZZZ-01 P02 | 18 min | 2 tasks | 3 files |
+| Phase ZZZ-01 P02 | 84 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -62,7 +62,9 @@ Progress: [█████░░░░░] 50%
 - [Phase ZZZ-01]: Port the compile-scenario filesystem boundary locally while preserving the Theory Agent CLI surface.
 - [Phase ZZZ-01]: Resolve the complete protected artifact set before constructing any fixture or live provider.
 - [Phase ZZZ-01]: Expose only artifact labels and project-relative paths for malformed JSON errors.
-- [Phase ZZZ-01]: Bind Theory run writes to inherited directory descriptors and native dir_fd operations for atomic no-clobber and race-safe replacement.
+- [Phase ZZZ-01]: Walk every Theory input from an inherited project-root descriptor with no-follow component opens.
+- [Phase ZZZ-01]: Journal output transactions with stable operation IDs, expected/owned inode checks, fsynced transitions, and interruption recovery.
+- [Phase ZZZ-01]: Bound filesystem concurrency guarantees to local single-user cooperating CLI writers that acquire the parent-directory flock; do not claim hostile same-UID filesystem CAS safety.
 
 ### Pending Todos
 
@@ -70,7 +72,7 @@ None yet.
 
 ### Blockers/Concerns
 
-- The six Theory Agent CLI tests now pass; authoritative regeneration and phase-wide quality gates remain before Phase 1 completion.
+- The six locked CLI tests, 12 race/recovery tests, 140 full tests, build, and E2E gate are green; authoritative regeneration and formal TRUST-03/04 closure remain before Phase 1 completion.
 - No model key or real model output is available for Phase 2.
 - Phase 5 contains externally consequential wallet actions and cannot auto-execute.
 
@@ -82,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-24T00:58:54.962Z
+Last session: 2026-07-24T02:13:38Z
 Stopped at: Completed ZZZ-01-02-PLAN.md
 Resume file: None
