@@ -25,18 +25,105 @@ function normalizeBaseUrl(value) {
 
 function parseModelObject(content) {
   if (content && typeof content === 'object' && !Array.isArray(content)) return structuredClone(content)
-  if (typeof content !== 'string') throw new TypeError('Model response must contain JSON content')
-  const trimmed = content.trim()
-  const withoutFence = trimmed.startsWith('```')
-    ? trimmed.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
-    : trimmed
+  if (typeof content !== 'string') throw new TypeError('Model response must be a valid JSON object')
+  let normalized = content.trim()
+  if (normalized.startsWith('<think>')) {
+    const thinkMatch = normalized.match(/^<think>[\s\S]*?<\/think>\s*/)
+    if (!thinkMatch) throw new TypeError('Model response must be a valid JSON object')
+    normalized = normalized.slice(thinkMatch[0].length).trim()
+    if (normalized.startsWith('<think>')) throw new TypeError('Model response must be a valid JSON object')
+  }
+  if (normalized.startsWith('```')) {
+    const fenceMatch = normalized.match(/^```(?:json)?[ \t]*(?:\r?\n)?([\s\S]*?)(?:\r?\n)?```$/i)
+    if (!fenceMatch) throw new TypeError('Model response must be a valid JSON object')
+    normalized = fenceMatch[1].trim()
+  }
   try {
-    const parsed = JSON.parse(withoutFence)
+    const parsed = JSON.parse(normalized)
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('not an object')
     return parsed
   } catch {
     throw new TypeError('Model response must be a valid JSON object')
   }
+}
+
+function createMiniMaxM27Provider({
+  baseUrl,
+  apiKey,
+  model = 'MiniMax-M2.7',
+  fetchImpl = globalThis.fetch,
+  timeoutSignalFactory = (milliseconds) => AbortSignal.timeout(milliseconds),
+} = {}) {
+  const normalizedBaseUrl = normalizeBaseUrl(baseUrl)
+  const secret = requiredString(apiKey, 'Model API key')
+  const modelName = requiredString(model, 'Model name')
+  if (modelName !== 'MiniMax-M2.7') throw new TypeError('MiniMax provider requires model MiniMax-M2.7')
+  if (typeof fetchImpl !== 'function') throw new TypeError('A fetch implementation is required')
+  if (typeof timeoutSignalFactory !== 'function') throw new TypeError('A timeout signal factory is required')
+
+  return Object.freeze({
+    async generateObject({ schemaName, system, user } = {}) {
+      const contract = requiredString(schemaName, 'Schema name')
+      const body = {
+        model: modelName,
+        messages: [
+          { role: 'system', content: requiredString(system, 'System prompt') },
+          { role: 'user', content: requiredString(user, 'User prompt') },
+        ],
+        temperature: 0.1,
+        reasoning_split: true,
+        stream: false,
+      }
+      let response
+      try {
+        response = await fetchImpl(`${normalizedBaseUrl}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${secret}`,
+          },
+          body: JSON.stringify(body),
+          signal: timeoutSignalFactory(120_000),
+        })
+      } catch {
+        throw new Error('MiniMax request failed before receiving a response')
+      }
+      if (!response?.ok) {
+        const status = Number.isInteger(response?.status) ? ` (${response.status})` : ''
+        throw new Error(`MiniMax request failed${status}`)
+      }
+      let payload
+      try {
+        payload = await response.json()
+      } catch {
+        throw new Error('MiniMax response body was not valid JSON')
+      }
+      if (typeof payload?.id !== 'string' || payload.id.trim().length === 0) {
+        throw new Error('MiniMax response did not include a request id')
+      }
+      let object
+      try {
+        object = parseModelObject(payload?.choices?.[0]?.message?.content)
+      } catch {
+        throw new Error('MiniMax response did not contain a valid JSON object')
+      }
+      const provenance = {
+        mode: 'live-model',
+        provider: 'minimax',
+        model: modelName,
+        schemaName: contract,
+        requestId: payload.id.trim(),
+      }
+      let traceId = null
+      try {
+        traceId = response.headers?.get?.('trace_id')
+      } catch {
+        throw new Error('MiniMax response metadata could not be read')
+      }
+      if (typeof traceId === 'string' && traceId.trim().length > 0) provenance.traceId = traceId.trim()
+      return { object, provenance }
+    },
+  })
 }
 
 function createOpenAICompatibleProvider({
@@ -125,6 +212,7 @@ function createReplayProvider({ model, recordingId, object } = {}) {
 }
 
 const aiProviderApi = {
+  createMiniMaxM27Provider,
   createOpenAICompatibleProvider,
   createReplayProvider,
   parseModelObject,

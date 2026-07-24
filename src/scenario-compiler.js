@@ -23,6 +23,7 @@ const ROOT_FIELDS = new Set([
   'schemaVersion', 'id', 'title', 'environment', 'kind', 'languages', 'scenario',
   'strategies', 'stakeholderArchetypes', 'theoryMappings', 'assumptions',
   'parameterBindings', 'citations', 'limitations', 'theorySystemId', 'provenance', 'capabilities',
+  'sourceDigests', 'evidenceLanguageBoundary', 'validation', 'verticalSlice',
 ])
 const SCENARIO_FIELDS = new Set([
   'id', 'label', 'eventDay', 'controllability', 'priorCrisis', 'triggers', 'regionFactors',
@@ -39,11 +40,19 @@ const MEMORY_SEED_FIELDS = new Set(['claimId', 'salience'])
 const ASSUMPTION_FIELDS = new Set(['id', 'path', 'value', 'synthetic', 'rationale'])
 const PARAMETER_BINDING_FIELDS = new Set(['path', 'basis', 'assumptionId', 'claimId'])
 const PROVENANCE_FIELDS = new Set([
-  'mode', 'provider', 'model', 'schemaName', 'requestId', 'recordingId', 'evidencePackId', 'theorySystemId',
+  'mode', 'provider', 'model', 'schemaName', 'requestId', 'traceId', 'recordingId', 'evidencePackId', 'theorySystemId',
 ])
 const CAPABILITY_FIELDS = new Set([
   'realModelUsed', 'recordedModelOutput', 'evidenceBounded', 'humanApprovedTheorySystem',
 ])
+const SOURCE_DIGEST_FIELDS = new Set([
+  'approvedExtractions', 'evidenceReview', 'ledger', 'theoryCatalog',
+  'theoryRun', 'verticalSlice', 'theorySystem',
+])
+const LANGUAGE_BOUNDARY_FIELDS = new Set(['schemaVersion', 'reviewLanguages', 'claims'])
+const LANGUAGE_CLAIM_FIELDS = new Set(['claimId', 'directLanguages', 'unavailableDirectLanguages'])
+const VALIDATION_FIELDS = new Set(['schemaVersion', 'status'])
+const VERTICAL_SLICE_BINDING_FIELDS = new Set(['id', 'theorySystemId', 'targetLanguages', 'boundaries'])
 
 function modelApi() {
   if (typeof module !== 'undefined' && module.exports) return require('./model.js')
@@ -297,7 +306,49 @@ function validateCompiledScenario(compiled, {
   if (!Array.isArray(compiled.limitations) || compiled.limitations.length === 0) {
     errors.push('Compiled scenario requires limitations')
   }
+  if (compiled.sourceDigests !== undefined) {
+    validateClosedFields(compiled.sourceDigests, SOURCE_DIGEST_FIELDS, 'Source digests', errors)
+    for (const key of SOURCE_DIGEST_FIELDS) {
+      if (!/^sha256:[0-9a-f]{64}$/.test(compiled.sourceDigests?.[key] || '')) {
+        errors.push(`Source digest ${key} must be a canonical SHA-256 digest`)
+      }
+    }
+  }
+  if (compiled.evidenceLanguageBoundary !== undefined) {
+    const boundary = compiled.evidenceLanguageBoundary
+    validateClosedFields(boundary, LANGUAGE_BOUNDARY_FIELDS, 'Evidence language boundary', errors)
+    if (boundary?.schemaVersion !== 'evidence-language-boundary/1.0') {
+      errors.push('Evidence language boundary schema is unsupported')
+    }
+    if (!Array.isArray(boundary?.reviewLanguages) || !sameValue(boundary.reviewLanguages, REQUIRED_LANGUAGES)) {
+      errors.push('Evidence language boundary reviewLanguages must be exactly zh-CN, en, and ja')
+    }
+    if (!Array.isArray(boundary?.claims) || boundary.claims.length === 0) {
+      errors.push('Evidence language boundary requires claim support entries')
+    } else {
+      for (const claim of boundary.claims) {
+        validateClosedFields(claim, LANGUAGE_CLAIM_FIELDS, 'Evidence language claim', errors)
+        if (!claimsById.has(claim?.claimId)) errors.push(`Evidence language boundary references unknown claim: ${claim?.claimId || ''}`.trim())
+        if (!Array.isArray(claim?.directLanguages) || !Array.isArray(claim?.unavailableDirectLanguages)) {
+          errors.push(`Evidence language claim ${claim?.claimId || ''} requires direct and unavailable language arrays`.trim())
+        }
+      }
+    }
+  }
+  if (compiled.validation !== undefined) {
+    validateClosedFields(compiled.validation, VALIDATION_FIELDS, 'Fixed compilation validation', errors)
+    if (compiled.validation?.schemaVersion !== 'fixed-compilation-validation/1.0') {
+      errors.push('Fixed compilation validation schema is unsupported')
+    }
+    if (compiled.validation?.status !== 'passed') errors.push('Fixed compilation validation status must be passed')
+  }
+  if (compiled.verticalSlice !== undefined) {
+    validateClosedFields(compiled.verticalSlice, VERTICAL_SLICE_BINDING_FIELDS, 'Compiled vertical slice', errors)
+  }
   validateClosedFields(compiled.provenance, PROVENANCE_FIELDS, 'Compiled scenario provenance', errors)
+  if (compiled.provenance?.traceId !== undefined && !isNonEmptyString(compiled.provenance.traceId)) {
+    errors.push('Compiled scenario provenance traceId must be a non-empty string when present')
+  }
   validateClosedFields(compiled.capabilities, CAPABILITY_FIELDS, 'Compiled scenario capabilities', errors)
   return { valid: errors.length === 0, errors }
 }
@@ -395,13 +446,21 @@ async function compileScenario({
     system: prompt.system,
     user: prompt.user,
   })
+  const {
+    sourceDigests: _modelSourceDigests,
+    evidenceLanguageBoundary: _modelEvidenceLanguageBoundary,
+    validation: _modelValidation,
+    ...modelObject
+  } = generated?.object && typeof generated.object === 'object' && !Array.isArray(generated.object)
+    ? generated.object
+    : {}
   const provenance = {
     ...(generated.provenance || {}),
     evidencePackId: evidencePack.packId,
     theorySystemId,
   }
   const result = {
-    ...generated.object,
+    ...modelObject,
     theorySystemId,
     provenance,
     capabilities: {
@@ -426,6 +485,7 @@ const scenarioCompilerApi = {
   REQUIRED_PARAMETER_PATHS,
   buildScenarioCompilerPrompt,
   compileScenario,
+  requiredNumericBindingPaths,
   validateCompiledScenario,
 }
 
