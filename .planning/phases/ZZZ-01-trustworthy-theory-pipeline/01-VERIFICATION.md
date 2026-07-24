@@ -1,16 +1,17 @@
 ---
-status: gaps_found
-score: 62
+status: passed
+score: 100
 phase: ZZZ-01-trustworthy-theory-pipeline
-verified_at: 2026-07-24T16:39:39+08:00
+verified_at: 2026-07-24T18:18:14+08:00
 severity_counts:
   blocker: 0
-  high: 2
-  medium: 2
-  low: 1
+  high: 0
+  medium: 0
+  low: 0
   info: 0
 branch: gsd/phase-1-trustworthy-theory-pipeline
-head: 6dafd78c80a4d1e1a5ce0d0580b512e5689bb1d1
+head: fb217bd438b0680c6f380106e256cdfc8c4cc199
+reviewed_source_head: 007543d5875b18c41e9c176fb40c285c500ae61e
 review_reconciled_with: .planning/phases/ZZZ-01-trustworthy-theory-pipeline/01-REVIEW.md
 ---
 
@@ -18,156 +19,87 @@ review_reconciled_with: .planning/phases/ZZZ-01-trustworthy-theory-pipeline/01-R
 
 ## Findings
 
-- `HIGH`: `scripts/run-theory-agent.js:524-531` lets `status` summarize a persisted run without validating current inputs or reconstructing READY authority. Per `.planning/phases/ZZZ-01-trustworthy-theory-pipeline/01-REVIEW.md`, a tampered run can still be presented as `READY_FOR_COMPILATION` with false `realModelUsed` and Theory System ID fields.
-- `HIGH`: `scripts/run-theory-agent.js:531-558` and `src/theory-agent.js:314-329,492-495` let `review` persist `APPROVED` for a semantically tampered mapping because `applyTheoryReview` validates without current inputs. The review reproduced an invented theory path that became `APPROVED` before `resume` would later reject it.
-- `MEDIUM`: `src/theory-agent.js:567-597` does not rebuild the finalized Theory System from the approved mapping during READY validation. A schema-valid, recomputed System can diverge semantically from the reviewed mapping and still pass `validateTheoryAgentRun(...)`.
-- `MEDIUM`: `src/theory-agent.js:452-475` does not bind historical review decisions to their paired review-event states. The review reproduced a prior `REVISION_REQUESTED` event whose stored review history was changed to `approve` and still validated.
-- `LOW`: `docs/restart-handoff-2026-07-24.md:30-37` still reports focused `31/31` and full Node `145/145`, while `.planning/phases/ZZZ-01-trustworthy-theory-pipeline/01-VALIDATION.md:74-79` and verifier reruns show `39/39` focused and `146/146` full Node.
+No current open findings.
 
-## Scope Decision
+## Phase Gate
 
-Phase 1 is not independently verified at branch `gsd/phase-1-trustworthy-theory-pipeline` / `6dafd78c80a4d1e1a5ce0d0580b512e5689bb1d1`.
+**PASS.** Phase 1 goal truth is proven at branch `gsd/phase-1-trustworthy-theory-pipeline`, evidence head `fb217bd438b0680c6f380106e256cdfc8c4cc199`, with BLOCKER=0, HIGH=0, MEDIUM=0. Human verification required: none.
 
-Before this verifier pass, project-level state still correctly kept Phase 1 uncompleted:
+## Must-Have And Requirement Traceability
 
-- `.planning/ROADMAP.md:29-34,100-103` marked Phase 1 as `ready for independent verification`.
-- `.planning/STATE.md:7-8,30-35` marked the lifecycle as `verifying` with `completed_phases: 0`.
+### TRUST-01
 
-That project-level boundary remains correct. The executor closure record and my earlier verifier pass were too optimistic because they did not falsify persisted-run tampering paths through public `status` and `review`.
+- Public `status`, `review`, and `resume` now perform current-input authority checks before summary, provider selection, or persistence (`scripts/run-theory-agent.js:535-586`).
+- Ordinary authority rejection remains read-only: the CLI authority regressions assert exact run-byte identity, unchanged directory entries, and no temp/journal/backup debris (`tests/theory-agent-cli-authority.test.js:75-186`).
+- The cooperative-writer filesystem boundary remains explicit, using parent-directory `flock`, with same-UID non-cooperating writers kept as residual risk rather than falsely claimed hostile-filesystem safety (`AGENTS.md:27`, `.planning/STATE.md:69`, `.planning/phases/ZZZ-01-trustworthy-theory-pipeline/01-REVIEW.md:105-111`).
 
-## Why The Earlier Verification Missed These Gaps
+### TRUST-02
 
-My earlier independent validation exercised only the clean checked-in authoritative fixture and green regression gates:
+- The authoritative run remains a checked deterministic fixture with repository-relative `fixturePath`, canonical `fixtureDigest`, and `realModelUsed: false` in both mapping and finalized Theory System (`experiments/output/theory/zzz-1-4-fade-run.json`, `docs/restart-handoff-2026-07-24.md:24,46-48,59`).
+- Current public `status` reports the same non-live authority fields and exact Theory System ID.
 
-- focused suite on the clean run
-- locked CLI digest check
-- `npm run theory:agent -- status` on the untampered persisted run
-- read-only `validateTheoryAgentRun(...)` on the untampered persisted run
-- `npm run build`
-- `npm test`
-- diff and bounded secret scan
+### TRUST-03
 
-That verified the happy-path baseline and the checked artifact's internal consistency. It did not exercise adversarial persisted-run mutations with recomputed structural digests across:
+- `applyTheoryReview(...)` and `validateTheoryAgentRun(..., inputs)` are now input-authoritative and fail closed for recomputed invented mappings (`src/theory-agent.js:321-339,520-525`; `tests/theory-agent-cli-authority.test.js:127-154`).
+- READY validation rebuilds the exact Theory System via `finalizeTheorySystem({ mapping, review, ...inputs })` and rejects semantically detached but self-consistent recomputations (`src/theory-agent.js:590-629`; `tests/theory-agent-security.test.js:177-189`).
+- Historical review lineage is typed and ordered: stored reviews are normalized, paired to matching review events, bound to the preceding proposal mapping digest, and required to satisfy `approve -> APPROVED`, `revise -> REVISION_REQUESTED`, `reject -> REJECTED` (`src/theory-agent.js:462-490`; `tests/theory-agent-security.test.js:191-230`).
+- The exact current READY identity remains `theory-system:sha256:432e0f6273403bb3f4cae5afaac4ba61c6dde9a8e4e5e2b118a58c9427e84912`, while the older ID is preserved only as historical invalidation (`docs/restart-handoff-2026-07-24.md:46,70`).
 
-- stale or semantically tampered READY runs presented through `status`
-- semantically tampered pending mappings presented through `review`
-- semantically detached Theory Systems that remain self-consistent after recomputed IDs
-- contradictory historical review/event combinations
+### TRUST-04
 
-The completed code review did exercise those tampered persisted-run paths and reproduced 2 `HIGH` and 2 `MEDIUM` failures. Those findings supersede my earlier pass decision.
+- Validation rows `01-05-01`, `01-05-02`, and `01-05-03` are green and attach actual evidence for focused authority tests, final build/full-Node/Mac-host E2E, and post-fix claim/security closure (`.planning/phases/ZZZ-01-trustworthy-theory-pipeline/01-VALIDATION.md:52-54`).
+- The current independent deep review is clean at reviewed source head `007543d5875b18c41e9c176fb40c285c500ae61e`, with seven historical findings preserved as resolved and no current open findings (`.planning/phases/ZZZ-01-trustworthy-theory-pipeline/01-REVIEW.md:1-24,113-120`).
 
-## Must-Have Evidence
+## Commands And Evidence
 
-### Regression Baseline That Still Holds
+### Fresh verifier reruns at `fb217bd438b0680c6f380106e256cdfc8c4cc199`
 
-These green checks remain valid as regression baseline evidence. They show that the clean fixture and current branch still satisfy the recorded happy-path gates, even though persisted-run authority validation is incomplete.
-
-#### TRUST-01 baseline
-
-- Filesystem containment, protected-input collision checks, descriptor-bound reads, journaled writes, and cooperative directory locking are implemented in `scripts/run-theory-agent.js:81-180,191-413`, `scripts/secure-input-read.py:31-68`, and `scripts/secure-run-output.py:383-516`.
-- The cooperative lock boundary is explicit in `scripts/secure-run-output.py:478-481` via `fcntl.flock(... LOCK_EX | LOCK_NB)`.
-- CLI attack coverage remains green in `tests/theory-agent-cli.test.js:15-153` and recovery/race coverage in `tests/theory-agent-cli-races.test.js:54-509`.
-- Verifier reruns preserved:
-  - focused trust+compile suite: `39/39` passed
-  - locked CLI digest: exact SHA-256 `53ca63c48afb367691caa492cb478823575473e922719e9cafd63c97effe8e23`
-  - `git diff --check`: exit `0`
-  - bounded secret scan: no hits
-
-#### TRUST-02 baseline
-
-- Closed provenance validation is implemented in `src/theory-mapper.js:16-97`.
-- Finalization and post-persistence revalidation are implemented in `src/theory-system.js:136-219` and `src/theory-agent.js:478-597`.
-- The clean authoritative run at `experiments/output/theory/zzz-1-4-fade-run.json` still records:
-  - `runId = zzz-fade-20260724045215`
-  - `revision = 3`
-  - `mapping.provenance.mode = deterministic-fixture`
-  - `mapping.capabilities.realModelUsed = false`
-  - `theorySystem.provenance.mode = deterministic-fixture`
-  - `theorySystem.provenance.realModelUsed = false`
-  - `theorySystem.provenance.fixturePath = data/theory-agent/zzz-1-4-fade-mapping-fixture.json`
-  - `theorySystem.provenance.fixtureDigest = sha256:76e6880eff48c263f8481ad2440ebdc2068dc1b8f0b5878c3bba5ea31905aea2`
-
-#### TRUST-03 baseline
-
-- `npm run theory:agent -- status` on the clean persisted run returned:
-  - `runId = zzz-fade-20260724045215`
-  - `state = READY_FOR_COMPILATION`
-  - `revision = 3`
-  - `realModelUsed = false`
-  - `theorySystemId = theory-system:sha256:432e0f6273403bb3f4cae5afaac4ba61c6dde9a8e4e5e2b118a58c9427e84912`
-- Read-only validation on the clean persisted run with `validateTheoryAgentRun(...)` returned `valid: true` and exact input digest matches for:
-  - `approvedExtractions = sha256:f9a216da460893abc01de40844295e51a2f638f89a292056420bb24f87ea1ec1`
-  - `evidenceReview = sha256:493e99eaf49090ee48211fed824a91d78af8d922db3f6c3e456656e5da1762d8`
-  - `ledger = sha256:f3c80f1881c2e75583a0cd76c20ba5df6f5e603de926361ceb6b1e6ba6690e05`
-  - `theoryCatalog = sha256:9296e439d7a610302bc7e0ae19afc7c95697af99d4a85265cb2f73ca9b93f3e6`
-- Reconstructed unsigned Theory System ID on the clean run exactly matched `theory-system:sha256:432e0f6273403bb3f4cae5afaac4ba61c6dde9a8e4e5e2b118a58c9427e84912`.
-
-This baseline no longer proves the full TRUST-03 authority claim because `status` and reusable READY validation both fail under tampered persisted-run paths.
-
-#### TRUST-04 baseline
-
-- Verifier reruns preserved:
-  - `npm run build`: exit `0`, `Built RiskCommitment (556 bytes)`
-  - `npm test`: exit `0`, `146/146` passed
-- Authoritative recorded target-machine evidence remains:
-  - `.planning/phases/ZZZ-01-trustworthy-theory-pipeline/01-VALIDATION.md:73-81`
-  - `.planning/phases/ZZZ-01-trustworthy-theory-pipeline/01-04-SUMMARY.md:24-37,52-66`
-  - These record `npm ci` exit `0`, `npm run build` exit `0`, `npm test` `146/146`, and Mac host `npm run test:e2e` as `10 passed` with `4 explicit project-matrix skips`.
-
-## Commands And Artifact Checks Used
-
-### Earlier verifier reruns on the clean authoritative fixture
-
-- `git rev-parse HEAD`
-  - matched expected `6dafd78c80a4d1e1a5ce0d0580b512e5689bb1d1`
-- `node --test tests/theory-mapper.test.js tests/theory-agent.test.js tests/theory-agent-security.test.js tests/theory-agent-cli.test.js tests/compile-scenario-cli.test.js`
-  - exit `0`; `39/39` passed
-- `node -e "...sha256(theory-agent-cli.test.js)..."`
-  - exact digest match `53ca63c48afb367691caa492cb478823575473e922719e9cafd63c97effe8e23`
+- `node --test tests/theory-agent-cli-authority.test.js tests/theory-agent-security.test.js tests/theory-agent.test.js tests/compile-scenario-cli.test.js tests/theory-agent-cli.test.js tests/theory-agent-cli-races.test.js`
+  - Exit `0`; `60` passed, `0` failed, `0` skipped.
+- Locked CLI digest
+  - Observed SHA-256 for `tests/theory-agent-cli.test.js`: `53ca63c48afb367691caa492cb478823575473e922719e9cafd63c97effe8e23`.
 - `npm run theory:agent -- status`
-  - exit `0` on the clean run; matched expected `runId`, `revision`, `state`, `realModelUsed`, and Theory System ID
-- read-only Node validation of `validateTheoryAgentRun(...)` plus digest reconstruction
-  - exit `0` on the clean run; run and Theory System validated against current inputs
-- `npm run build`
-  - exit `0`; built `RiskCommitment (556 bytes)`
-- `npm test`
-  - exit `0`; `146/146` passed
-- `npm run test:e2e`
-  - sandbox rerun failed before browser assertions with Python `http.server` bind `PermissionError: [Errno 1] Operation not permitted`
-  - treated as execution-environment limitation only; did not contradict recorded Mac host pass
+  - Exit `0`; `runId = zzz-fade-20260724045215`, `state = READY_FOR_COMPILATION`, `revision = 3`, `realModelUsed = false`, `mappingCount = 4`, `unmappedClaimCount = 0`, `theorySystemId = theory-system:sha256:432e0f6273403bb3f4cae5afaac4ba61c6dde9a8e4e5e2b118a58c9427e84912`.
 - `git diff --check`
-  - exit `0`
-- `git grep -lE '(BEGIN (RSA|OPENSSH|EC) PRIVATE KEY|sk-[A-Za-z0-9]{20,}|0x[0-9a-fA-F]{64})' -- app.js scripts src data experiments contracts tests ':(exclude)src/contract-artifact.js'`
-  - exit `1`; no filename hits
+  - Exit `0`.
 
-### Independent code review evidence now incorporated
+### Reconciled recorded evidence accepted without redundant reruns
 
-- `.planning/phases/ZZZ-01-trustworthy-theory-pipeline/01-REVIEW.md`
-  - reproduced 2 `HIGH` and 2 `MEDIUM` tampered persisted-run failures
-  - these findings are accepted here as authoritative independent falsification of the earlier pass decision
+- `git diff --name-only 007543d5875b18c41e9c176fb40c285c500ae61e..fb217bd438b0680c6f380106e256cdfc8c4cc199`
+  - Only planning/documentation files changed after the clean reviewed source head; no `scripts/`, `src/`, `tests/`, or authoritative run artifact changed after review.
+- `.planning/phases/ZZZ-01-trustworthy-theory-pipeline/01-VALIDATION.md:76-84`
+  - Records exact-lockfile restore, `npm run build`, `npm test`, and Mac-host `npm run test:e2e` with actual totals: build green, `153/153` Node green, E2E `10 passed / 4 explicit project-matrix skips` in `9.5s`.
+- `.planning/phases/ZZZ-01-trustworthy-theory-pipeline/01-REVIEW.md:90-101`
+  - Records the same focused suite, `npm test`, build, status, locked digest, diff check, and host-E2E evidence integrity.
+
+The earlier sandbox bind denial is not counted as a pass or waiver; only the separately recorded Mac-host E2E result is treated as gate evidence.
 
 ## Claim-Boundary Assessment
 
-- The implementation and planning records still keep `deterministic-fixture` explicit and do not relabel the clean checked fixture as live-model output.
-- The reviewer label `manual-demo-curator` remains a local declaration, not cryptographic identity.
-- Synthetic representatives and scenario indices remain bounded away from player-sample and probability claims in the authoritative closure docs and clean run artifact.
-- Filesystem safety claims remain correctly bounded to local cooperative writers using the parent-directory `flock`; no universal hostile same-UID transaction-safety claim should be made.
-- However, persisted-run authority claims are currently too strong. The public `status` command and reusable READY validation do not fail closed under all tampered persisted-run paths reproduced by the review.
+- Deterministic fixture/non-live authority remains explicit in code, run artifact, restart handoff, README, and validation; no current artifact relabels the fixture as live model output.
+- Synthetic groups and scenario outputs remain bounded away from player-sample or real-probability claims (`.planning/PROJECT.md:37,56`, `.planning/phases/ZZZ-01-trustworthy-theory-pipeline/01-VALIDATION.md:70,84`).
+- The current operator docs now align with the actual single macOS PR gate and do not make Linux/Windows or cross-platform support claims (`README.md:29`, `AGENTS.md:35`, `docs/competition-mac-mvp-outline.md:49-55`, `docs/restart-handoff-2026-07-24.md:68`).
+- Filesystem claims remain correctly bounded to cooperating local writers; no current artifact makes a universal hostile-filesystem transaction-safety claim.
 
 ## Residual Risks
 
-- Non-cooperating same-UID writers remain an explicit residual risk by design; this is documented and not overstated.
-- The verifier did not rerun `npm ci`; exact-lockfile restoration is still accepted from recorded closure evidence in `01-VALIDATION.md`.
-- The verifier could not reproduce Mac host E2E inside the sandbox because local port binding is denied here; the authoritative host pass remains recorded and internally consistent with the rest of the closure evidence.
-- Low-severity restart-handoff count drift remains in `docs/restart-handoff-2026-07-24.md:30-37`.
+- Non-cooperating same-UID writers that ignore the parent-directory `flock` remain outside the local MVP boundary.
+- Reviewer names remain local declarations, not authenticated or cryptographically verified identities.
+- Historical reviews do not preserve every prior mapping payload; validation proves closed review shape, event-state agreement, digest/timestamp binding, and typed mapping-target binding only.
+- Recovery tests cover deterministic failpoints, not physical power loss or filesystem remount durability on the target Mac.
+- The Mac-host E2E result was not independently rerun in this verification session; it is accepted from the recorded current evidence because the reviewed source head and current evidence head do not diverge in runtime/test code.
+- Repository-wide branch coverage remains below the generic 80% target, but the changed Phase 1 authority paths have direct adversarial coverage and no uncovered medium-or-above truth gap remains.
 
-## Human Verification Needed
+## Post-Competition Exclusions
 
-Phase 1 requires code fixes and re-review before an independent verification pass can be granted.
+- Non-macOS support, CI operating-system matrices, and cross-platform verification remain post-competition work.
+- Real-model compilation remains a Phase 2 concern; Phase 1 proves deterministic-fixture authority only.
+- Hybrid-agent emergence, runtime-driven 3D channels, and broader scenario generalization remain excluded from this phase.
+- Injective deployment, wallet authorization, and any chain transaction remain excluded from this verification.
 
-After fixes, rerun independent review specifically against:
+## Verification Verdict
 
-- tampered persisted-run `status` behavior
-- tampered persisted-run `review` behavior
-- READY validation with reconstructed Theory System equality
-- historical review decision/event binding
+Phase 1 is independently verified as achieved for TRUST-01 through TRUST-04 at evidence head `fb217bd438b0680c6f380106e256cdfc8c4cc199`.
+
+`## Verification Complete`
+`status=passed blocker=0 high=0 medium=0 low=0 info=0`

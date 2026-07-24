@@ -7,10 +7,10 @@
 
 ### Trust Baseline
 
-- [ ] **TRUST-01**: Operator can run the Theory Agent CLI without any output path overwriting or escaping the reviewed project inputs.
-- [ ] **TRUST-02**: Operator can distinguish deterministic fixtures, recorded model output, and live model output from complete provenance.
-- [ ] **TRUST-03**: Operator can regenerate a READY Theory System whose digests and review lineage match the restored evidence ledger.
-- [ ] **TRUST-04**: Maintainer can pass build, complete Node tests, and desktop/mobile E2E tests at every phase boundary.
+- [x] **TRUST-01**: Operator can run the Theory Agent CLI without any output path overwriting or escaping the reviewed project inputs.
+- [x] **TRUST-02**: Operator can distinguish deterministic fixtures, recorded model output, and live model output from complete provenance.
+- [x] **TRUST-03**: Operator can regenerate a READY Theory System whose digests and review lineage match the restored evidence ledger.
+- [x] **TRUST-04**: Maintainer can pass build, complete Node tests, and desktop/mobile E2E tests at every phase boundary.
 
 ### Evidence and AI Compilation
 
@@ -67,10 +67,10 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TRUST-01 | Phase 1 | Pending |
-| TRUST-02 | Phase 1 | Pending |
-| TRUST-03 | Phase 1 | Pending |
-| TRUST-04 | Phase 1 | Pending |
+| TRUST-01 | Phase 1 | Complete |
+| TRUST-02 | Phase 1 | Complete |
+| TRUST-03 | Phase 1 | Complete |
+| TRUST-04 | Phase 1 | Complete |
 | AI-01 | Phase 2 | Pending |
 | AI-02 | Phase 2 | Pending |
 | AI-03 | Phase 2 | Pending |
@@ -84,6 +84,7 @@
 | VIS-01..03 | Post-competition | Deferred |
 
 **Coverage:**
+
 - v1 requirements: 13 total
 - Mapped to phases: 13
 - Unmapped: 0

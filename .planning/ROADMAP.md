@@ -8,7 +8,7 @@ The competition milestone restores a trustworthy Theory Agent baseline, performs
 
 ## Phases
 
-- [ ] **Phase 1: Trustworthy Theory Pipeline** - Fix current CLI security/provenance regressions and regenerate authoritative Theory System output.
+- [x] **Phase 1: Trustworthy Theory Pipeline** - Fix current CLI security/provenance regressions and regenerate authoritative Theory System output. (completed 2026-07-24)
 - [ ] **Phase 2: Fixed-Case Evidence-Bound AI Compilation** - Produce and validate one attributable real-model artifact for the frozen 1.4/3.1 slice.
 - [ ] **Phase 3: Injective Testnet Audit** - Complete one user-confirmed commitment proof for the fixed run.
 - [ ] **Phase 4: Mac Field Demo Closure** - Reuse the verified simulation and 3D observer in a tested 3-5 minute macOS workflow and ship it through a PR.
@@ -26,13 +26,13 @@ The competition milestone restores a trustworthy Theory Agent baseline, performs
   2. A fresh deterministic-fixture run records fixture path/digest, `realModelUsed: false`, valid review lineage, and a new content-addressed Theory System ID.
   3. `npm run build`, `npm test`, and `npm run test:e2e` all pass from a clean worktree.
 
-**Plans**: 4/5 plans executed; independent review opened one gap-closure plan
+**Plans**: 5/5 plans executed and independently verified
 
 - [x] 01-01-PLAN.md
 - [x] 01-02-PLAN.md
 - [x] 01-03-PLAN.md
 - [x] 01-04-PLAN.md
-- [ ] 01-05-PLAN.md
+- [x] 01-05-PLAN.md
 
 **Wave 1**
 
@@ -52,7 +52,7 @@ The competition milestone restores a trustworthy Theory Agent baseline, performs
 
 **Wave 5** *(blocked on Wave 4 independent review)*
 
-- [ ] `01-05`: Persisted-run authority gap closure
+- [x] `01-05`: Persisted-run authority gap closure
 
 ### Phase 2: Fixed-Case Evidence-Bound AI Compilation
 
@@ -104,7 +104,7 @@ The competition milestone restores a trustworthy Theory Agent baseline, performs
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Trustworthy Theory Pipeline | 4/5 | Gap closure planned | - |
+| 1. Trustworthy Theory Pipeline | 5/5 | Complete    | 2026-07-24 |
 | 2. Fixed-Case Evidence-Bound AI Compilation | 0/TBD | Not started | - |
 | 3. Injective Testnet Audit | 0/TBD | Not started | - |
 | 4. Mac Field Demo Closure | 0/TBD | Not started | - |
