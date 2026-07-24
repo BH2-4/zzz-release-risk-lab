@@ -65,7 +65,7 @@ ProgramE 要把《绝区零》全球发行中的公开证据、社会学理论�
 重启后先从本文件恢复上下文，并执行 `git status --short --branch` 确认工作树；不要再把旧 Theory System ID 当成当前权威。
 
 1. 进入 Phase 2，补全固定案例的公开证据扩写、理论库映射和一次真实模型编译闭环；若无真实凭据，只能继续保留离线 fallback，不得宣称“真实 AI MVP 已完成”。
-2. 把当前文档边界与 CI 实现对齐：赛前 PR 复验应迁移为单一 macOS GitHub Actions job，Ubuntu workflow 不可继续被表述为赛内验收依据。
+2. 保持当前文档边界与 CI 实现一致：赛前 PR 复验使用现有单一 macOS GitHub Actions job，不增加 Linux/Windows jobs 或操作系统矩阵。
 3. 在进入链上闭环前继续保持用户确认：只允许 Injective testnet，且钱包连接、合约部署/选择、签名与交易都要人工确认。
 4. 旧 ID `theory-system:sha256:5c22be0df832eacac9f41664c8905580f8f7d19223ce294d8be677631186f8f2` 已失效，只能作为历史记录；当前权威 ID 是 `theory-system:sha256:432e0f6273403bb3f4cae5afaac4ba61c6dde9a8e4e5e2b118a58c9427e84912`。
 5. 当前 `experiments/output/theory/zzz-1-4-fade-run.json` 已是默认可编译权威 run；后续如输入摘要、审批链或 Theory System 再变化，必须重新走完整 CLI 生命周期，不得手改 JSON 或 ID。

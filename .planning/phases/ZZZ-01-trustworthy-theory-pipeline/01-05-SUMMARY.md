@@ -34,7 +34,7 @@ key-decisions:
   - "Treat structural validation without inputs as inspection only; public lifecycle authority always uses the four current reviewed inputs."
   - "Compare canonical audit and READY artifacts by repository digest equality, while returning constant public authority errors."
   - "Bind historical review targets to the proposal event's typed mapping-digest position without claiming unavailable historical payload reconstruction."
-  - "Keep host Mac E2E and independent overall review as unwaived orchestrator gates; do not mark Phase 1 complete."
+  - "Keep host Mac E2E and independent overall review as unwaived orchestrator gates; the orchestrator later closed both before Phase 1 verification."
 
 patterns-established:
   - "Public authority precheck: securely load current inputs, validate, emit a constant error before summary/provider/write."
@@ -165,15 +165,15 @@ status: complete
 
 **Total deviations:** 2 auto-fixed Rule 1 security bugs. **Impact:** Both tightened the declared artifact-safe authority boundary without changing the public CLI contract or schema.
 
-### Environment Checkpoint
+### Environment Checkpoint - Resolved
 
 - Sandboxed Playwright could not start its local web server because socket bind returned `PermissionError: [Errno 1] Operation not permitted` before browser assertions.
-- This is not recorded as a pass or waiver. The parent orchestrator must run `npm run test:e2e` on the host Mac.
+- This was not recorded as a pass or waiver. The parent orchestrator subsequently ran `npm run test:e2e` on the host Mac: 10 passed, 4 explicit project-matrix skips, exit 0 in 9.5s.
 
 ## Issues Encountered
 
 - Repository-wide coverage passed execution but branch coverage is 69.60%, below the generic 80% target. Raising unrelated module branch coverage is outside this plan's declared file ownership; the changed authority paths have direct adversarial coverage.
-- Fresh independent overall code review is intentionally left to the parent orchestrator after host E2E; this executor's ASVS/claim review is not substituted for that gate.
+- The parent orchestrator completed a fresh independent deep review after host E2E. Current findings are BLOCKER=0, HIGH=0, MEDIUM=0, LOW=0, INFO=0; seven historical findings are retained as resolved in `01-REVIEW.md`.
 
 ## User Setup Required
 
@@ -182,7 +182,7 @@ None - no external service configuration required.
 ## Next Phase Readiness
 
 - Executor-owned implementation, focused tests, build, complete Node suite, hygiene, locked digest, and ASVS/claim closure are green.
-- Host Mac E2E and a fresh independent overall review with BLOCKER=0/HIGH=0/MEDIUM=0 remain required before Phase 1 is eligible for verified/complete status.
+- Host Mac E2E and the fresh independent overall review are complete; Plan 01-05 is eligible for final Phase 1 verification.
 - No push, PR, live model request, wallet action, deployment, or Injective transaction occurred.
 
 ## Self-Check: PASSED
@@ -191,7 +191,7 @@ None - no external service configuration required.
 - Both original RED and security-review RED failures were observed before their GREEN fixes.
 - Final focused 60/60, build, and full Node 153/153 gates pass; locked digest and hygiene checks pass.
 - ASVS/claim re-review reports zero BLOCKER, HIGH, MEDIUM, and LOW findings.
-- The sandbox E2E denial and pending independent overall review are explicitly unwaived and handed to the orchestrator.
+- The sandbox E2E denial remained unwaived until the orchestrator completed the host run; independent overall review is now clean.
 - `.planning/config.json` and `.codex/` remain unstaged and untouched; Phase 1 is not marked complete.
 
 ---

@@ -32,4 +32,4 @@
 - 不得把已知红灯推送到 `main`。
 - 固定顺序：实现完成 -> 独立审查无 BLOCKER/HIGH/MEDIUM -> 在当前 macOS 演示机上 `npm run build` -> `npm test` -> `npm run test:e2e` 全绿 -> push 功能分支 -> 创建 PR -> 单一 macOS GitHub Actions 复验 -> 合并 `main`。
 - 每个本地阶段必须通过上述三门才可标记完成。
-- 赛前 GitHub Actions 只能复验目标 macOS；当前 Ubuntu workflow 在改为 macOS runner 前不具备赛内验收效力。Linux/Windows jobs、操作系统矩阵及跨平台复验统一延后到赛后。
+- 赛前 GitHub Actions 仅使用现有单一 macOS job 复验目标平台。Linux/Windows jobs、操作系统矩阵及跨平台复验统一延后到赛后。

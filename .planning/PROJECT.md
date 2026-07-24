@@ -59,7 +59,7 @@ An operator can trace every simulated divergence back to reviewed public evidenc
 - **AI security**: BYOK keys remain in a trusted Node process; model output is untrusted and closed-contract validated.
 - **Chain safety**: No automatic Injective deployment, mainnet switch, private-key read, or unconfirmed transaction.
 - **Workflow**: Use full GSD discuss -> plan -> execute -> verify -> review; do not use autonomous `gsd--auto` operation.
-- **Delivery**: Work on a feature branch. Push and open a PR only after independent review and all three local Mac gates pass; never push known-red work to `main`. Before it can serve as the PR merge gate, the current Ubuntu workflow must become one macOS target-platform job; non-macOS CI is post-competition.
+- **Delivery**: Work on a feature branch. Push and open a PR only after independent review and all three local Mac gates pass; never push known-red work to `main`. The PR merge gate uses the existing single macOS target-platform job; non-macOS CI is post-competition.
 
 ## Key Decisions
 

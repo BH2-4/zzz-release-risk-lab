@@ -48,7 +48,7 @@
 - 3-5 分钟讲清具体问题、原做法、AI 质变点与不能声称的内容。
 - 赛内平台验收只以当前 macOS 演示机上的独立审查、`npm run build`、`npm test` 和 `npm run test:e2e` 为准。
 - 本地全绿后才 push 功能分支并创建 PR；赛前 GitHub Actions 改为单一 macOS runner，只复验目标平台。
-- 当前 Ubuntu workflow 在完成上述调整前不具备赛内验收效力；不在赛前增加 Linux/Windows jobs 或操作系统矩阵。
+- 当前单一 macOS workflow 作为赛内目标平台复验；不在赛前增加 Linux/Windows jobs 或操作系统矩阵。
 
 ## Post-competition iterations
 

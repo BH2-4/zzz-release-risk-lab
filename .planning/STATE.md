@@ -71,7 +71,7 @@ Progress: [████████░░] 80% of plans; Phase 1 remains incompl
 - [Phase ZZZ-01]: Adopt unique revisioned journal updates and retain published journals until caller acknowledgement.
 - [Project]: The competition MVP supports the current macOS demo machine; non-macOS support and cross-platform verification are post-competition.
 - [Project]: Delivery is PR-first: independent review and all three local gates must pass before pushing the feature branch; known-red work never goes to main.
-- [Project]: The current Ubuntu GitHub Actions job has no competition acceptance authority; the pre-competition PR gate will be one macOS target-platform job, while non-macOS CI and cross-platform verification remain post-competition.
+- [Project]: The pre-competition PR gate is the existing single macOS target-platform job; non-macOS CI and cross-platform verification remain post-competition.
 - [Project]: The competition path reuses the deterministic 125-representative simulation and 3D replay; hybrid cognition and emergent Reverse/relationship channels are post-competition.
 
 ### Pending Todos
