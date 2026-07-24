@@ -253,6 +253,27 @@ function reconcileRunOutput(output, operationId) {
   return result.response
 }
 
+function finalizeRunOutput(output, operationId, publishedIdentity) {
+  const request = {
+    operation: 'finalize',
+    journalName: output.journalName,
+    operationId,
+    publishedIdentity,
+  }
+  let result = runOutputHelper(output, request)
+  if (result.processStatus === 0 && result.response?.status === 'finalized' &&
+      result.response.operationId === operationId) return
+
+  // A lost finalize response is safe to retry: cleanup is ownership-aware and idempotent.
+  result = runOutputHelper(output, request)
+  if (result.processStatus === 0 && ['finalized', 'none'].includes(result.response?.status) &&
+      result.response.operationId === operationId) {
+    const target = inspectBoundOutputTarget(output)
+    if (target.kind === 'file' && sameIdentity(target.identity, publishedIdentity)) return
+  }
+  throw new TypeError('Theory run output acknowledgement failed')
+}
+
 function assertOutputParentStillBound(output) {
   let realParent
   let currentIdentity
@@ -309,6 +330,8 @@ function prepareRunOutput(root, relativePath, inputArtifacts) {
       throw new TypeError('A previous run output transaction conflicts with the current target')
     } else if (recovery.status === 'busy') {
       throw new TypeError('Another run output transaction is still in progress')
+    } else if (recovery.status === 'published') {
+      finalizeRunOutput(output, recovery.operationId, recovery.publishedIdentity)
     }
     output.target = inspectBoundOutputTarget(output)
     assertOutputDoesNotOverwriteInput(output, inputArtifacts)
@@ -351,7 +374,8 @@ function writeJsonAtomic(output, value, {
     failpoint: filesystemFailpoint,
   }
   const result = runOutputHelper(output, request)
-  let publishedIdentity = result.processStatus === 0 && result.response?.status === 'committed'
+  let publishedIdentity = result.processStatus === 0 && result.response?.status === 'committed' &&
+    result.response.operationId === operationId
     ? result.response.publishedIdentity
     : null
   if (!publishedIdentity) {
@@ -371,18 +395,19 @@ function writeJsonAtomic(output, value, {
     }
   }
 
-  let postCommitError = null
-  try {
-    if (afterCommit) afterCommit()
-    assertOutputParentStillBound(output)
-    const currentTarget = inspectBoundOutputTarget(output)
-    if (currentTarget.kind !== 'file' || !sameIdentity(currentTarget.identity, publishedIdentity)) {
-      throw new TypeError('Theory run output changed after publication')
-    }
-  } catch (error) {
-    postCommitError = error
+  assertOutputParentStillBound(output)
+  let currentTarget = inspectBoundOutputTarget(output)
+  if (currentTarget.kind !== 'file' || !sameIdentity(currentTarget.identity, publishedIdentity)) {
+    throw new TypeError('Theory run output changed after publication')
   }
-  if (postCommitError) throw postCommitError
+  finalizeRunOutput(output, operationId, publishedIdentity)
+
+  if (afterCommit) afterCommit()
+  assertOutputParentStillBound(output)
+  currentTarget = inspectBoundOutputTarget(output)
+  if (currentTarget.kind !== 'file' || !sameIdentity(currentTarget.identity, publishedIdentity)) {
+    throw new TypeError('Theory run output changed after publication')
+  }
   return output.outputPath
 }
 
@@ -493,17 +518,18 @@ async function runCommand({
       }
     }
 
-    const runArtifact = readJsonArtifact(inputContext, runRelative, 'Theory run')
-    const run = runArtifact.value
-    if (command === 'status') return { kind: 'run', summary: summarize(run), path: runRelative }
-
-    const inputArtifacts = loadInputArtifacts(inputContext, env)
-    const fixtureArtifact = loadFixtureArtifact(inputContext, env)
-    const output = prepareRunOutput(realRoot, runRelative, [...Object.values(inputArtifacts), fixtureArtifact])
+    const output = prepareRunOutput(realRoot, runRelative, [])
     try {
+      const runArtifact = readJsonArtifact(inputContext, runRelative, 'Theory run')
+      const run = runArtifact.value
       if (output.target.kind !== 'file' || !sameIdentity(output.target.identity, runArtifact.identity)) {
         throw new TypeError('Theory run changed after it was read')
       }
+      if (command === 'status') return { kind: 'run', summary: summarize(run), path: runRelative }
+
+      const inputArtifacts = loadInputArtifacts(inputContext, env)
+      const fixtureArtifact = loadFixtureArtifact(inputContext, env)
+      assertOutputDoesNotOverwriteInput(output, [...Object.values(inputArtifacts), fixtureArtifact])
       if (command === 'review') {
         const decision = options.decision
         if (!['approve', 'revise', 'reject'].includes(decision)) {

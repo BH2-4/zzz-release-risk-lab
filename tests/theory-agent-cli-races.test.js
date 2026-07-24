@@ -28,6 +28,29 @@ function transactionDebris(directory) {
   ))
 }
 
+function invokeOutputHelper(directoryDescriptor, request) {
+  return childProcess.spawnSync('python3', [secureOutputHelper], {
+    encoding: 'utf8',
+    input: JSON.stringify(request),
+    stdio: ['pipe', 'pipe', 'pipe', directoryDescriptor],
+  })
+}
+
+function outputTransactionRequest({ operationId, targetName = 'run.json', expectedTarget, contents, failpoint }) {
+  return {
+    operation: 'commit',
+    operationId,
+    mode: expectedTarget.kind === 'missing' ? 'noreplace' : 'replace',
+    targetName,
+    tempName: `.${targetName}.tmp-${operationId}`,
+    backupName: `.${targetName}.bak-${operationId}`,
+    journalName: `.${targetName}.transaction.json`,
+    expectedTarget,
+    contents: Buffer.from(contents, 'utf8').toString('base64'),
+    failpoint,
+  }
+}
+
 test('ordinary start atomically refuses a concurrently created run target', async (context) => {
   const localDirectory = fs.mkdtempSync(path.join(projectRoot, '.tmp-theory-no-clobber-'))
   const runPath = path.join(localDirectory, 'run.json')
@@ -204,6 +227,69 @@ test('interruption after temp creation records and removes the operation-scoped 
   assert.deepEqual(transactionDebris(localDirectory), [])
 })
 
+for (const failpoint of ['after-journal-update-create', 'before-journal-update-replace']) {
+  test(`recovery adopts an interrupted journal update at ${failpoint}`, (context) => {
+    const localDirectory = fs.mkdtempSync(path.join(projectRoot, '.tmp-theory-journal-update-'))
+    const operationId = crypto.randomUUID()
+    const targetName = 'run.json'
+    const journalName = `.${targetName}.transaction.json`
+    const foreignName = `.theory-transaction-update-${operationId}-foreign`
+    const directoryDescriptor = fs.openSync(localDirectory, fs.constants.O_RDONLY | fs.constants.O_DIRECTORY)
+    context.after(() => {
+      fs.closeSync(directoryDescriptor)
+      fs.rmSync(localDirectory, { recursive: true, force: true })
+    })
+
+    const interrupted = invokeOutputHelper(directoryDescriptor, outputTransactionRequest({
+      operationId,
+      targetName,
+      expectedTarget: { kind: 'missing' },
+      contents: '{}\n',
+      failpoint,
+    }))
+    assert.equal(interrupted.status, 75, interrupted.stderr)
+    fs.writeFileSync(path.join(localDirectory, foreignName), 'not-an-owned-update\n', { mode: 0o600 })
+
+    const firstRecovery = invokeOutputHelper(directoryDescriptor, {
+      operation: 'recover',
+      journalName,
+      operationId,
+    })
+    assert.equal(firstRecovery.status, 0, firstRecovery.stderr)
+    assert.equal(JSON.parse(firstRecovery.stdout).status, 'unpublished')
+
+    const secondRecovery = invokeOutputHelper(directoryDescriptor, {
+      operation: 'recover',
+      journalName,
+      operationId,
+    })
+    assert.equal(secondRecovery.status, 0, secondRecovery.stderr)
+    assert.equal(JSON.parse(secondRecovery.stdout).status, 'none')
+    assert.equal(fs.readFileSync(path.join(localDirectory, foreignName), 'utf8'), 'not-an-owned-update\n')
+    assert.deepEqual(transactionDebris(localDirectory), [foreignName])
+  })
+}
+
+test('interruption after backup creation removes the adopted operation-owned link', async (context) => {
+  const localDirectory = fs.mkdtempSync(path.join(projectRoot, '.tmp-theory-interrupt-backup-'))
+  const runPath = path.join(localDirectory, 'run.json')
+  const originalContents = 'pre-generation-owner\n'
+  fs.writeFileSync(runPath, originalContents, { mode: 0o600 })
+  context.after(() => fs.rmSync(localDirectory, { recursive: true, force: true }))
+
+  await assert.rejects(
+    () => runCommand({
+      argv: ['start', '--demo', '--replace', '--run', path.relative(projectRoot, runPath)],
+      now: '2026-07-24T01:50:00+08:00',
+      filesystemFailpoint: 'after-backup-create-before-journal',
+    }),
+    /could not be committed safely/i,
+  )
+
+  assert.equal(fs.readFileSync(runPath, 'utf8'), originalContents)
+  assert.deepEqual(transactionDebris(localDirectory), [])
+})
+
 test('interruption between replacement steps restores the expected target without clobber', async (context) => {
   const localDirectory = fs.mkdtempSync(path.join(projectRoot, '.tmp-theory-interrupt-between-'))
   const runPath = path.join(localDirectory, 'run.json')
@@ -220,6 +306,40 @@ test('interruption between replacement steps restores the expected target withou
     /could not be committed safely/i,
   )
 
+  assert.equal(fs.readFileSync(runPath, 'utf8'), originalContents)
+  assert.deepEqual(transactionDebris(localDirectory), [])
+})
+
+test('fresh status recovers a replacement interrupted between publication steps', async (context) => {
+  const localDirectory = fs.mkdtempSync(path.join(projectRoot, '.tmp-theory-status-recovery-'))
+  const runPath = path.join(localDirectory, 'run.json')
+  const runRelative = path.relative(projectRoot, runPath)
+  context.after(() => fs.rmSync(localDirectory, { recursive: true, force: true }))
+
+  await runCommand({
+    argv: ['start', '--demo', '--run', runRelative],
+    now: '2026-07-24T01:50:00+08:00',
+  })
+  const originalContents = fs.readFileSync(runPath, 'utf8')
+  const operationId = crypto.randomUUID()
+  const directoryDescriptor = fs.openSync(localDirectory, fs.constants.O_RDONLY | fs.constants.O_DIRECTORY)
+  try {
+    const interrupted = invokeOutputHelper(directoryDescriptor, outputTransactionRequest({
+      operationId,
+      expectedTarget: { kind: 'file', identity: fileIdentity(runPath) },
+      contents: originalContents,
+      failpoint: 'between-replacement-steps',
+    }))
+    assert.equal(interrupted.status, 75, interrupted.stderr)
+  } finally {
+    fs.closeSync(directoryDescriptor)
+  }
+  assert.equal(fs.existsSync(runPath), false)
+  assert.notDeepEqual(transactionDebris(localDirectory), [])
+
+  const status = await runCommand({ argv: ['status', '--run', runRelative] })
+  assert.equal(status.kind, 'run')
+  assert.equal(status.summary.state, 'AWAITING_HUMAN')
   assert.equal(fs.readFileSync(runPath, 'utf8'), originalContents)
   assert.deepEqual(transactionDebris(localDirectory), [])
 })
@@ -351,6 +471,22 @@ test('interruption after publication reconciles the owned target and returns suc
     argv: ['start', '--demo', '--run', path.relative(projectRoot, runPath)],
     now: '2026-07-24T01:50:00+08:00',
     filesystemFailpoint: 'after-publication-before-response',
+  })
+
+  assert.equal(result.kind, 'run')
+  assert.equal(JSON.parse(fs.readFileSync(runPath, 'utf8')).state, 'AWAITING_HUMAN')
+  assert.deepEqual(transactionDebris(localDirectory), [])
+})
+
+test('malformed final publication response is recovered and acknowledged', async (context) => {
+  const localDirectory = fs.mkdtempSync(path.join(projectRoot, '.tmp-theory-malformed-response-'))
+  const runPath = path.join(localDirectory, 'run.json')
+  context.after(() => fs.rmSync(localDirectory, { recursive: true, force: true }))
+
+  const result = await runCommand({
+    argv: ['start', '--demo', '--run', path.relative(projectRoot, runPath)],
+    now: '2026-07-24T01:50:00+08:00',
+    filesystemFailpoint: 'malformed-final-response',
   })
 
   assert.equal(result.kind, 'run')
