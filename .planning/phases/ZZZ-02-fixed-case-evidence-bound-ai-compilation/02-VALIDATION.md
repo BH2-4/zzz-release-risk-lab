@@ -33,7 +33,7 @@ created: 2026-07-24
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| ZZZ-02-01-01 | 01 | 1 | AI-01..AI-04 | T-02-S, T-02-I | M2.7 transport and fixed validators reject unsupported output without secret/reasoning leakage | unit | `node --test tests/ai-provider.test.js tests/scenario-compiler.test.js tests/compilation-pipeline.test.js` | Existing | Passed: 24/24 |
+| ZZZ-02-01-01 | 01 | 1 | AI-01..AI-04 | T-02-S, T-02-I | M2.7 transport and fixed validators reject unsupported output without secret/reasoning leakage | unit | `node --test tests/ai-provider.test.js tests/scenario-compiler.test.js tests/compilation-pipeline.test.js` | Existing | Passed: 25/25 |
 | ZZZ-02-01-02 | 01 | 1 | AI-01, AI-03 | T-02-T, T-02-R | Cooperative parent-flock publication is busy-safe, conflict-safe, recoverable, and no-clobber | integration/race | `node --test tests/compile-scenario-cli.test.js tests/compile-scenario-cli-races.test.js` | Race suite created by this task | Passed: 23/23 |
 | ZZZ-02-01-03 | 01 | 1 | AI-01..AI-04 | T-02-S..T-02-E | Five focused suites and all three pre-live Mac gates are green without credentials/network | full pre-live gate | `node --test tests/ai-provider.test.js tests/scenario-compiler.test.js tests/compilation-pipeline.test.js tests/compile-scenario-cli.test.js tests/compile-scenario-cli-races.test.js && npm run build && npm test && npm run test:e2e` | Existing after Task 02 | Passed pre-live; see observed evidence |
 | ZZZ-02-02-01 | 02 | 2 | AI-01 | T-02-I, T-02-R | User-authorized inherited environment exists immediately before the sole live request | manual checkpoint | Boolean variable-name presence only; no `.env.*` read | N/A | Pending |
@@ -57,13 +57,13 @@ Observed on 2026-07-24 on the competition Mac: macOS 26.5.2 (25F84), arm64, Node
 
 | Command | Exit | Observed result |
 |---------|------|-----------------|
-| `node --test tests/ai-provider.test.js tests/scenario-compiler.test.js tests/compilation-pipeline.test.js` | 0 | 24 passed, 0 failed |
+| `node --test tests/ai-provider.test.js tests/scenario-compiler.test.js tests/compilation-pipeline.test.js` | 0 | 25 passed, 0 failed |
 | `node --test tests/compile-scenario-cli.test.js tests/compile-scenario-cli-races.test.js` | 0 | 23 passed, 0 failed |
-| `node --test tests/ai-provider.test.js tests/scenario-compiler.test.js tests/compilation-pipeline.test.js tests/compile-scenario-cli.test.js tests/compile-scenario-cli-races.test.js` | 0 | 47 passed, 0 failed, 0 skipped |
+| `node --test tests/ai-provider.test.js tests/scenario-compiler.test.js tests/compilation-pipeline.test.js tests/compile-scenario-cli.test.js tests/compile-scenario-cli-races.test.js` | 0 | 48 passed, 0 failed, 0 skipped |
 | `npm run build` | 0 | Hardhat build passed; `RiskCommitment` size 556 bytes |
-| `npm test` | 0 | 175 passed, 0 failed, 0 skipped |
+| `npm test` | 0 | 176 passed, 0 failed, 0 skipped |
 | `npm run test:e2e` (sandbox attempt) | non-zero before assertions | Local web-server bind to `127.0.0.1:4173` was denied by the sandbox; this was not treated as a product failure or as a pass |
-| `npm run test:e2e` (host Mac retry) | 0 | 10 passed, 4 pre-existing complementary project/viewport matrix exclusions, 0 failed, 10.5s |
+| `npm run test:e2e` (host Mac retry) | 0 | 10 passed, 4 pre-existing complementary project/viewport matrix exclusions, 0 failed, 9.9s |
 | `git diff --check` | 0 | No whitespace errors |
 
 The four Playwright exclusions are existing test-declared complementary project/viewport matrix cases, not flaky or newly skipped coverage. They are recorded explicitly because the plan's gate language treats skipped evidence conservatively; every runnable configured case passed on the target Mac.
@@ -88,6 +88,16 @@ The four Playwright exclusions are existing test-declared complementary project/
 - Commit `43261ad` rejects evidence-derived fixed-case numbers, requires canonical synthetic path/value assumptions, fixes all persisted semantic fields and limitations, enforces exact mode-specific provenance/capabilities, constrains identifiers, requests at most 8192 completion tokens, and caps streamed response bytes at 1 MiB before JSON parsing.
 - Post-fix focused verification passed 47/47; build, full Node, and host E2E were rerun from the corrected implementation.
 - Fresh independent read-only re-review ran the three core suites at 24/24 and reports BLOCKER=0, HIGH=0, MEDIUM=0, LOW=0. All six original findings are resolved; no waiver remains.
+
+### Targeted Review Reopen
+
+- A later targeted review reopened `02-01` with HIGH=1 and MEDIUM=1. The HIGH identified identifier reflection through nested `reasoning_details` or content removed from a leading `<think>...</think>` wrapper. The MEDIUM identified that both `02-02` disk commands used the wrong validator signature and did not independently require live provenance.
+- Tests-first RED was 23 passed / 2 failed across 25 provider/compiler/pipeline tests. One failure covered four hidden-reasoning body/trace channels; the other directly rejected the stale plan command.
+- Hidden reasoning strings are now collected locally and iteratively from `reasoning_content`, arbitrarily nested `reasoning_details`, and one complete leading think wrapper. They are used only for identifier comparison and never returned, persisted, logged, or included in errors.
+- Both `02-02` commands now call `validateFixedCompilationArtifact(out, inputs)` and separately require `mode=live-model`, `realModelUsed=true`, provider `minimax`, model `MiniMax-M2.7`, and a non-empty request ID.
+- Offline contract coverage proves a valid live-shaped artifact satisfies signoff while a structurally valid recorded artifact remains non-live and fails signoff. No provider request is involved.
+- Independent targeted re-review reports BLOCKER=0, HIGH=0, MEDIUM=0 and one LOW test-strength note. The LOW was closed by requiring exactly two occurrences of the validator signature and every live/request-ID predicate; the corrected core suite remains 25/25.
+- Post-remediation gates: all focused 48/48, full Node 176/176, build 556 bytes, and host E2E 10 passed with the same 4 pre-existing matrix exclusions.
 
 ### Offline Safety Confirmation
 

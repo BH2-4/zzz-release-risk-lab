@@ -33,6 +33,7 @@ key-files:
     - tests/scenario-compiler.test.js
     - tests/compilation-pipeline.test.js
     - tests/compile-scenario-cli.test.js
+    - .planning/phases/ZZZ-02-fixed-case-evidence-bound-ai-compilation/02-02-PLAN.md
 
 key-decisions:
   - "Use one non-streaming MiniMax-M2.7 request with reasoning_split=true, max_tokens=8192, a 120-second timeout, and a 1 MiB response-byte cap."
@@ -80,7 +81,7 @@ coverage:
         status: pass
     human_judgment: false
 
-duration: 50 min
+duration: 78 min
 completed: 2026-07-24
 status: complete
 ---
@@ -91,18 +92,18 @@ status: complete
 
 ## Performance
 
-- **Duration:** 50 min
+- **Duration:** 78 min
 - **Started:** 2026-07-24T12:37:00Z
-- **Completed:** 2026-07-24T13:27:17Z
+- **Completed:** 2026-07-24T13:54:47Z
 - **Tasks:** 3
-- **Files modified:** 14 including summary and progress metadata
+- **Files modified:** 15 including the live-closure plan contract, summary, and progress metadata
 
 ## Accomplishments
 
 - Added a dedicated MiniMax M2.7 adapter with exactly one request, fixed request shape, 120-second timeout, bounded tokens/bytes, sanitized errors, and safe body/trace identifiers.
 - Pinned every fixed source digest and the frozen Theory System, then enforced exact evidence-language, theory, numeric-assumption, semantic-text, regional, capability, and mode-specific provenance contracts.
 - Replaced direct scenario publication with the existing fd-3 `secure-run-output.py` protocol and proved cooperative busy, conflict, failpoint recovery, parent swap, symlink, non-regular target, and protected-input cases.
-- Closed an independent hard review from 4 HIGH / 2 MEDIUM to zero findings and reran all pre-live Mac gates.
+- Closed the initial 4 HIGH / 2 MEDIUM review and a later targeted 1 HIGH / 1 MEDIUM reopen, then reran all pre-live Mac gates.
 
 ## Task Commits
 
@@ -111,17 +112,18 @@ status: complete
 3. **Independent-review remediation** - `43261ad`
 4. **Task 3: Pre-live validation evidence** - `56da427`
 5. **Plan summary and progress metadata** - this metadata commit
+6. **Targeted hidden-reasoning and live-signoff remediation** - this remediation commit
 
 ## Gate Results
 
 | Gate | Result |
 |------|--------|
-| Task 1 focused suites | 24 passed, 0 failed after remediation |
+| Task 1 focused suites | 25 passed, 0 failed after targeted remediation |
 | Task 2 CLI/race suites | 23 passed, 0 failed |
-| Five focused Phase 2 suites | 47 passed, 0 failed, 0 skipped |
+| Five focused Phase 2 suites | 48 passed, 0 failed, 0 skipped |
 | `npm run build` | Exit 0; `RiskCommitment` 556 bytes |
-| `npm test` | 175 passed, 0 failed, 0 skipped |
-| `npm run test:e2e` | Host Mac exit 0; 10 passed, 4 pre-existing complementary project/viewport exclusions, 10.5s |
+| `npm test` | 176 passed, 0 failed, 0 skipped |
+| `npm run test:e2e` | Host Mac exit 0; 10 passed, 4 pre-existing complementary project/viewport exclusions, 9.9s |
 | `git diff --check` | Exit 0 |
 | Independent remediation re-review | BLOCKER=0, HIGH=0, MEDIUM=0, LOW=0; core 24/24 |
 | Live artifact check | `compiled-scenario-v1.json` absent; output parent contains only `.gitkeep` |
@@ -131,12 +133,14 @@ status: complete
 - Task 1 RED established that the dedicated M2.7 adapter and fixed authority fields were absent before implementation; the exact initial count was not persisted. GREEN finished at the then-current 23/23.
 - Task 2 RED established that the bespoke publisher lacked real cooperative flock/conflict/failpoint coverage; the exact initial count was not persisted. GREEN finished at 23/23.
 - Independent-review remediation has exact retained evidence: RED 18 passed / 6 failed, then GREEN 24/24 core and 47/47 combined focused suites.
+- Targeted review reopen has exact retained evidence: RED 23 passed / 2 failed, then GREEN 25/25 core and 48/48 combined focused suites.
 
 ## Decisions Made
 
 - The fixed prompt now carries an exact semantic contract. Numeric magnitudes remain explicit synthetic stress-test inputs, never evidence-derived effects.
 - Live and recorded provenance use distinct exact field sets bound to the canonical evidence pack and Theory System. Cross-mode fields fail closed.
-- Response IDs are accepted only as bounded identifier tokens and are rejected when reflected from credentials, prompts, or reasoning.
+- Response IDs are accepted only as bounded identifier tokens and are rejected when reflected from credentials, prompts, `reasoning_content`, nested `reasoning_details`, or a stripped leading think wrapper.
+- `02-02` disk verification uses the actual artifact-first validator signature and requires explicit live MiniMax provenance in addition to structural validity; recorded mode cannot close AI-01.
 - The helper-acquired flock is explicitly released after every operation because inherited fd 3 shares the parent's open-file description; this preserves real per-operation contention semantics.
 
 ## Deviations from Plan
@@ -159,7 +163,15 @@ status: complete
 - **Verification:** CLI/race suites 23/23, including held-lock busy and between-operation identity conflict.
 - **Committed in:** `4afa0ee`
 
-**Total deviations:** 2 auto-fixed items. **Impact:** Both tighten the declared fixed-case and cooperating-writer boundaries without adding generalized cases, credentials, live requests, or chain scope.
+**3. [Rule 1 - Security/Correctness] Targeted review found hidden-reasoning ID channels and a stale live verifier**
+
+- **Found during:** Post-completion targeted review
+- **Issue:** Body/trace IDs were not compared with nested `reasoning_details` or leading think content, and `02-02` passed the validator an object wrapper with no independent live-mode assertion.
+- **Fix:** Added local hidden-reasoning collection, four body/trace reflection regressions, corrected both disk commands, and added offline live-versus-recorded signoff coverage.
+- **Verification:** RED 23/25; GREEN core 25/25, focused 48/48, full 176/176, host E2E 10 passed; targeted review is BLOCKER/HIGH/MEDIUM=0 and its LOW test-strength note is closed.
+- **Committed in:** this remediation commit
+
+**Total deviations:** 3 auto-fixed items. **Impact:** All tighten the declared fixed-case, provenance, and cooperating-writer boundaries without adding generalized cases, credentials, live requests, or chain scope.
 
 ## Issues Encountered
 
@@ -179,7 +191,7 @@ Plan `02-01` requires none. Plan `02-02` separately requires inherited `PROGRAM_
 ## Self-Check: PASSED
 
 - All plan-owned production, test, output-parent, validation, summary, state, and roadmap artifacts exist and are assigned to explicit commits.
-- Final focused 47/47, build, full Node 175/175, host E2E, and whitespace gates pass after remediation.
+- Final focused 48/48, build, full Node 176/176, host E2E, and whitespace gates pass after targeted remediation.
 - Independent re-review reports zero BLOCKER, HIGH, MEDIUM, and LOW findings.
 - `experiments/output/ai/compiled-scenario-v1.json` and transaction debris are absent; `.planning/config.json` and `.codex/` remain unstaged.
 - Phase 2 and AI requirements are not marked complete while `02-02` remains pending.

@@ -200,12 +200,16 @@ test('MiniMax adapter requires the exact approved model and ignores absent trace
 
 test('MiniMax rejects oversized bodies and reflected or structured provenance identifiers without retry', async () => {
   const identifierCases = [
-    ['secret body id', SECRET_SENTINEL, null, 'bounded system', ''],
-    ['prompt body id', PROMPT_SENTINEL, null, `bounded ${PROMPT_SENTINEL}`, ''],
-    ['reasoning trace id', 'safe-body-id', REASONING_SENTINEL, 'bounded system', REASONING_SENTINEL],
-    ['structured body id', '{"raw":"response"}', null, 'bounded system', ''],
+    ['secret body id', SECRET_SENTINEL, null, 'bounded system', '', null, '{"ok":true}'],
+    ['prompt body id', PROMPT_SENTINEL, null, `bounded ${PROMPT_SENTINEL}`, '', null, '{"ok":true}'],
+    ['reasoning trace id', 'safe-body-id', REASONING_SENTINEL, 'bounded system', REASONING_SENTINEL, null, '{"ok":true}'],
+    ['structured body id', '{"raw":"response"}', null, 'bounded system', '', null, '{"ok":true}'],
+    ['reasoning details body id', 'details-body-id', null, 'bounded system', '', [{ text: 'private details-body-id' }], '{"ok":true}'],
+    ['reasoning details trace id', 'safe-body-id', 'details-trace-id', 'bounded system', '', { nested: { text: 'private details-trace-id' } }, '{"ok":true}'],
+    ['leading think body id', 'think-body-id', null, 'bounded system', '', null, '<think>private think-body-id</think>{"ok":true}'],
+    ['leading think trace id', 'safe-body-id', 'think-trace-id', 'bounded system', '', null, '<think>private think-trace-id</think>{"ok":true}'],
   ]
-  for (const [name, id, traceId, system, reasoning] of identifierCases) {
+  for (const [name, id, traceId, system, reasoning, reasoningDetails, content] of identifierCases) {
     let fetchCount = 0
     const provider = createMiniMaxM27Provider({
       baseUrl: 'https://api.minimaxi.com/v1',
@@ -217,7 +221,7 @@ test('MiniMax rejects oversized bodies and reflected or structured provenance id
           headers: { get: () => traceId },
           json: async () => ({
             id,
-            choices: [{ message: { content: '{"ok":true}', reasoning_content: reasoning } }],
+            choices: [{ message: { content, reasoning_content: reasoning, reasoning_details: reasoningDetails } }],
           }),
         }
       },

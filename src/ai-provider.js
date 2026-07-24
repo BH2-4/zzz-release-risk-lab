@@ -96,6 +96,26 @@ function validatedProviderIdentifier(value, forbiddenValues) {
   return value
 }
 
+function hiddenReasoningStrings(message) {
+  const strings = []
+  const pending = [message?.reasoning_content, message?.reasoning_details]
+  while (pending.length > 0) {
+    const value = pending.pop()
+    if (typeof value === 'string') {
+      if (value.length > 0) strings.push(value)
+    } else if (Array.isArray(value)) {
+      pending.push(...value)
+    } else if (value && typeof value === 'object') {
+      pending.push(...Object.values(value))
+    }
+  }
+  if (typeof message?.content === 'string') {
+    const leadingThink = message.content.trim().match(/^<think>([\s\S]*?)<\/think>\s*/)
+    if (leadingThink?.[1]) strings.push(leadingThink[1])
+  }
+  return strings
+}
+
 function createMiniMaxM27Provider({
   baseUrl,
   apiKey,
@@ -154,11 +174,14 @@ function createMiniMaxM27Provider({
         throw new Error('MiniMax response body was not valid JSON')
       }
       const message = payload?.choices?.[0]?.message
-      const requestId = validatedProviderIdentifier(payload?.id, [
+      const forbiddenIdentifiers = [
         secret,
         systemPrompt,
         userPrompt,
-        message?.reasoning_content,
+        ...hiddenReasoningStrings(message),
+      ]
+      const requestId = validatedProviderIdentifier(payload?.id, [
+        ...forbiddenIdentifiers,
       ])
       if (!requestId) {
         throw new Error('MiniMax response did not include a request id')
@@ -183,12 +206,7 @@ function createMiniMaxM27Provider({
         throw new Error('MiniMax response metadata could not be read')
       }
       if (traceId !== null && traceId !== undefined && traceId !== '') {
-        const validatedTraceId = validatedProviderIdentifier(traceId, [
-          secret,
-          systemPrompt,
-          userPrompt,
-          message?.reasoning_content,
-        ])
+        const validatedTraceId = validatedProviderIdentifier(traceId, forbiddenIdentifiers)
         if (!validatedTraceId) throw new Error('MiniMax response metadata was invalid')
         provenance.traceId = validatedTraceId
       }

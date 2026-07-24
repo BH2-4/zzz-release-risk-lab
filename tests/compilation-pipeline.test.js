@@ -2,6 +2,8 @@
 
 const test = require('node:test')
 const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const path = require('node:path')
 
 const ledger = require('../data/evidence/ledger.json')
 const theoryCatalog = require('../data/evidence/theory-catalog.json')
@@ -414,4 +416,65 @@ test('recorded fixed compilation remains explicitly non-live and cannot satisfy 
     assert.equal(validation.valid, false, label)
     assert.match(validation.errors.join('; '), /provenance/i, label)
   }
+})
+
+test('02-02 disk verification uses the artifact-first signature and requires live MiniMax signoff', async () => {
+  const planPath = path.join(
+    __dirname,
+    '..',
+    '.planning',
+    'phases',
+    'ZZZ-02-fixed-case-evidence-bound-ai-compilation',
+    '02-02-PLAN.md',
+  )
+  const plan = fs.readFileSync(planPath, 'utf8')
+  const count = (pattern) => [...plan.matchAll(pattern)].length
+  assert.doesNotMatch(plan, /validateFixedCompilationArtifact\(\{compiled:out,/)
+  assert.equal(count(/validateFixedCompilationArtifact\(out,inputs\)/g), 2)
+  assert.equal(count(/provenance\?\.mode===['"]live-model['"]/g), 2)
+  assert.equal(count(/capabilities\?\.realModelUsed===true/g), 2)
+  assert.equal(count(/provenance\?\.provider===['"]minimax['"]/g), 2)
+  assert.equal(count(/provenance\?\.model===['"]MiniMax-M2\.7['"]/g), 2)
+  assert.equal(count(/typeof out\.provenance\?\.requestId===['"]string['"]/g), 2)
+  assert.equal(count(/out\.provenance\.requestId\.trim\(\)\.length&gt;0/g), 2)
+
+  const liveProvider = {
+    async generateObject() {
+      return {
+        object: fixedCompiledObject(),
+        provenance: {
+          mode: 'live-model', provider: 'minimax', model: 'MiniMax-M2.7',
+          schemaName: 'compiled-scenario/1.0', requestId: 'offline-live-shape-id',
+        },
+      }
+    },
+  }
+  const recordedProvider = {
+    async generateObject() {
+      return {
+        object: fixedCompiledObject(),
+        provenance: {
+          mode: 'recorded-model-output', provider: 'replay', model: 'recorded-minimax-output',
+          schemaName: 'compiled-scenario/1.0', recordingId: 'offline-recording-signoff', requestId: null,
+        },
+      }
+    },
+  }
+  const live = await runScenarioCompilation({ provider: liveProvider, ...fixedInputs() })
+  const recorded = await runScenarioCompilation({ provider: recordedProvider, ...fixedInputs() })
+  const isLiveSignoff = (artifact) => {
+    const validation = validateFixedCompilationArtifact(artifact, fixedInputs())
+    return validation.valid &&
+      artifact.provenance?.mode === 'live-model' &&
+      artifact.capabilities?.realModelUsed === true &&
+      artifact.provenance?.provider === 'minimax' &&
+      artifact.provenance?.model === 'MiniMax-M2.7' &&
+      typeof artifact.provenance?.requestId === 'string' &&
+      artifact.provenance.requestId.trim().length > 0
+  }
+
+  assert.equal(validateFixedCompilationArtifact(live, fixedInputs()).valid, true)
+  assert.equal(isLiveSignoff(live), true)
+  assert.equal(validateFixedCompilationArtifact(recorded, fixedInputs()).valid, true)
+  assert.equal(isLiveSignoff(recorded), false)
 })
