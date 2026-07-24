@@ -65,7 +65,15 @@ The competition milestone restores a trustworthy Theory Agent baseline, performs
   2. Invalid citations, theories, regional differences, or provenance fail closed before simulation.
   3. The artifact and model card distinguish direct multilingual evidence, translation, and synthetic assumptions; arbitrary cases and generalized inputs remain disabled.
 
-**Plans**: TBD
+**Plans**: 1/2 plans executed; authorized live closure pending
+
+**Wave 1**
+
+- [x] `02-01`: Credential-free fixed compiler, exact validators, cooperative publication, and pre-live Mac gates
+
+**Wave 2** *(blocked on inherited configuration names and explicit one-request authorization)*
+
+- [ ] `02-02`: One live artifact, disk revalidation, post-live gates, ASVS L2, and final independent review
 
 ### Phase 3: Injective Testnet Audit
 
@@ -105,6 +113,6 @@ The competition milestone restores a trustworthy Theory Agent baseline, performs
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Trustworthy Theory Pipeline | 5/5 | Complete    | 2026-07-24 |
-| 2. Fixed-Case Evidence-Bound AI Compilation | 0/TBD | Not started | - |
+| 2. Fixed-Case Evidence-Bound AI Compilation | 1/2 | In progress | - |
 | 3. Injective Testnet Audit | 0/TBD | Not started | - |
 | 4. Mac Field Demo Closure | 0/TBD | Not started | - |
