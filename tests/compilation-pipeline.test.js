@@ -284,9 +284,11 @@ test('fixed preparation pins every canonical source value before provider genera
 
 test('mocked MiniMax output crosses the fixed pipeline once and gains only local authority fields', async () => {
   let generateCount = 0
+  let promptPayload
   const provider = {
-    async generateObject() {
+    async generateObject({ user }) {
       generateCount += 1
+      promptPayload = JSON.parse(user)
       const object = fixedCompiledObject()
       object.sourceDigests = { verticalSlice: 'model-invented' }
       object.evidenceLanguageBoundary = { claims: [] }
@@ -307,6 +309,8 @@ test('mocked MiniMax output crosses the fixed pipeline once and gains only local
   const result = await runScenarioCompilation({ provider, ...fixedInputs() })
 
   assert.equal(generateCount, 1)
+  assert.equal(promptPayload.fixedSemanticContract.numericBindingBasis, 'synthetic-assumption')
+  assert.deepEqual(promptPayload.fixedSemanticContract.limitations, fixedVerticalSlice.boundaries)
   assert.deepEqual(result.sourceDigests, FIXED_SOURCE_DIGESTS)
   assert.equal(result.validation.schemaVersion, 'fixed-compilation-validation/1.0')
   assert.equal(result.validation.status, 'passed')
@@ -340,6 +344,14 @@ test('fixed artifact validation rejects altered authority, bindings, language, p
     ['citation', (value) => { value.citations.push('claim-invented') }],
     ['theory mapping', (value) => { value.theoryMappings[0].mechanism = 'Invented mechanism.' }],
     ['parameter binding', (value) => { value.parameterBindings.pop() }],
+    ['numeric evidence binding', (value) => {
+      const binding = value.parameterBindings[0]
+      value.assumptions = value.assumptions.filter((assumption) => assumption.id !== binding.assumptionId)
+      delete binding.assumptionId
+      binding.basis = 'evidence-derived'
+      binding.claimId = 'claim-zzz-1-4-fade-adjustment-fix'
+      value.scenario.eventDay = 2
+    }],
     ['regional factor', (value) => {
       value.scenario.regionFactors.europe = 1.1
       value.parameterBindings.push({
@@ -349,7 +361,17 @@ test('fixed artifact validation rejects altered authority, bindings, language, p
       })
     }],
     ['provenance', (value) => { value.provenance.rawResponse = 'not allowed' }],
+    ['provenance', (value) => { value.provenance.evidencePackId = 'evidence-pack:tampered' }],
+    ['provenance', (value) => { value.provenance.theorySystemId = `theory-system:sha256:${'0'.repeat(64)}` }],
+    ['provenance', (value) => { value.provenance.recordingId = 'cross-mode-recording' }],
     ['request', (value) => { value.provenance.requestId = null; value.capabilities.realModelUsed = false }],
+    ['languages', (value) => { value.languages.push('fr') }],
+    ['title semantic contract', (value) => { value.title = 'Version 3.1 official fade event' }],
+    ['scenario label semantic contract', (value) => { value.scenario.label = 'Official released incident' }],
+    ['stakeholder goal semantic contract', (value) => { value.stakeholderArchetypes[0].goals.push('claim-prevalence') }],
+    ['channel semantic contract', (value) => { value.stakeholderArchetypes[0].publicExpression.channels.push('private-reasoning') }],
+    ['limitation semantic contract', (value) => { value.limitations.push('The event has a 70% real-world probability.') }],
+    ['assumption rationale semantic contract', (value) => { value.assumptions[0].rationale = '<think>hidden reasoning</think>' }],
   ]
   for (const [label, mutate] of cases) {
     const value = structuredClone(accepted)
@@ -380,4 +402,16 @@ test('recorded fixed compilation remains explicitly non-live and cannot satisfy 
   assert.equal(result.capabilities.realModelUsed, false)
   assert.equal(result.capabilities.recordedModelOutput, true)
   assert.equal(validateFixedCompilationArtifact(result, fixedInputs()).valid, true)
+
+  for (const [label, mutate] of [
+    ['recorded evidence authority', (value) => { value.provenance.evidencePackId = 'tampered' }],
+    ['recorded theory authority', (value) => { value.provenance.theorySystemId = `theory-system:sha256:${'0'.repeat(64)}` }],
+    ['recorded trace field', (value) => { value.provenance.traceId = 'cross-mode-trace' }],
+  ]) {
+    const value = structuredClone(result)
+    mutate(value)
+    const validation = validateFixedCompilationArtifact(value, fixedInputs())
+    assert.equal(validation.valid, false, label)
+    assert.match(validation.errors.join('; '), /provenance/i, label)
+  }
 })

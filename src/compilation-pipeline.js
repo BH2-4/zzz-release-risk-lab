@@ -21,6 +21,20 @@ const FIXED_SOURCE_DIGESTS = Object.freeze({
   verticalSlice: 'sha256:e8ca8fad4e2a45ec4ac19a0b9b1f4bc7efc52f6178bb1c2bfbe4bb92b0b8f987',
   theorySystem: 'sha256:98f5cc12b66944d0326c255c7a73d7482a47846ab9e7ddd74610a093ba338fdc',
 })
+const FIXED_ASSUMPTION_RATIONALE = 'Bounded synthetic stress-test parameter; not an observed effect size.'
+const FIXED_SEMANTIC_FIELDS = Object.freeze({
+  title: 'Synthetic Version 3.1 fade-risk stress test',
+  scenarioLabel: '合成 3.1 角色展示异常压力测试',
+  baselineStrategyId: 'delayed-ambiguous',
+  candidateStrategyId: 'rapid-bounded-correction',
+  stakeholder: Object.freeze({
+    id: 'invested-players',
+    label: '已获取角色内容的合成代表者',
+    goals: Object.freeze(['content-access', 'procedural-fairness']),
+    channels: Object.freeze(['community', 'video']),
+    memoryClaimIds: Object.freeze(['claim-zzz-1-4-player-ownership-frame']),
+  }),
+})
 const SOURCE_LABELS = Object.freeze({
   approvedExtractions: 'Approved extractions',
   evidenceReview: 'Evidence review',
@@ -94,6 +108,25 @@ function deriveEvidenceLanguageBoundary(evidencePack) {
 
 function exactJson(left, right) {
   return JSON.stringify(left) === JSON.stringify(right)
+}
+
+function fixedSemanticContract(boundaries) {
+  return {
+    ...structuredClone(FIXED_SEMANTIC_FIELDS),
+    limitations: [...boundaries],
+    numericBindingBasis: 'synthetic-assumption',
+    assumptionIdPattern: 'fixed-assumption-{1-based required path index}',
+    assumptionRationale: FIXED_ASSUMPTION_RATIONALE,
+  }
+}
+
+function exactKeys(value, expected) {
+  return value && typeof value === 'object' && !Array.isArray(value) &&
+    exactJson(Object.keys(value).sort(), [...expected].sort())
+}
+
+function isProviderIdentifier(value) {
+  return typeof value === 'string' && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(value)
 }
 
 function assertFixedAuthority({
@@ -192,6 +225,7 @@ function prepareScenarioCompilation({
       verticalSlice,
     })
     prepared.evidenceLanguageBoundary = deriveEvidenceLanguageBoundary(evidencePack)
+    prepared.fixedSemanticContract = fixedSemanticContract(verticalSlice.boundaries)
   }
   return prepared
 }
@@ -257,49 +291,91 @@ function validateFixedCompilationArtifact(compiled, inputs = {}) {
   if (!exactJson([...actualPaths].sort(), [...requiredPaths].sort())) {
     errors.push('Fixed compilation parameter binding paths must exactly cover supported numeric values')
   }
-  const boundAssumptionIds = new Set(
-    (compiled?.parameterBindings || [])
-      .filter((binding) => binding.basis === 'synthetic-assumption')
-      .map((binding) => binding.assumptionId),
-  )
-  if (
-    !Array.isArray(compiled?.assumptions) ||
-    compiled.assumptions.length !== boundAssumptionIds.size ||
-    compiled.assumptions.some((assumption) => !boundAssumptionIds.has(assumption.id))
-  ) {
-    errors.push('Fixed compilation assumptions must be exhaustively bound to supported parameter paths')
+  const expectedBindings = requiredPaths.map((path, index) => ({
+    path,
+    basis: 'synthetic-assumption',
+    assumptionId: `fixed-assumption-${index + 1}`,
+  }))
+  if (!exactJson(compiled?.parameterBindings, expectedBindings)) {
+    errors.push('Fixed compilation numeric evidence binding is forbidden; bindings must use canonical synthetic assumptions')
+  }
+  const expectedAssumptions = requiredPaths.map((path, index) => ({
+    id: `fixed-assumption-${index + 1}`,
+    path,
+    value: path.split('.').reduce((current, key) => current?.[key], compiled),
+    synthetic: true,
+    rationale: FIXED_ASSUMPTION_RATIONALE,
+  }))
+  if (!exactJson(compiled?.assumptions, expectedAssumptions)) {
+    errors.push('Fixed compilation assumption rationale semantic contract and path/value bindings must be exact')
   }
   if (Object.values(compiled?.scenario?.regionFactors || {}).some((factor) => factor !== 1)) {
     errors.push('Fixed compilation regional factors must remain exactly 1.0')
   }
-  if (!prepared.boundaries.every((boundary) => compiled?.limitations?.includes(boundary))) {
-    errors.push('Fixed compilation limitations must preserve every canonical fact and counterfactual boundary')
+  const semantic = prepared.fixedSemanticContract
+  if (compiled?.title !== semantic.title) errors.push('Fixed compilation title semantic contract does not match')
+  if (compiled?.scenario?.label !== semantic.scenarioLabel) errors.push('Fixed compilation scenario label semantic contract does not match')
+  if (
+    compiled?.strategies?.baseline?.id !== semantic.baselineStrategyId ||
+    compiled?.strategies?.candidate?.id !== semantic.candidateStrategyId
+  ) errors.push('Fixed compilation strategy id semantic contract does not match')
+  const stakeholders = compiled?.stakeholderArchetypes
+  if (!Array.isArray(stakeholders) || stakeholders.length !== 1) {
+    errors.push('Fixed compilation stakeholder semantic contract requires exactly one canonical archetype')
+  } else {
+    const stakeholder = stakeholders[0]
+    if (stakeholder?.id !== semantic.stakeholder.id || stakeholder?.label !== semantic.stakeholder.label) {
+      errors.push('Fixed compilation stakeholder label semantic contract does not match')
+    }
+    if (!exactJson(stakeholder?.goals, semantic.stakeholder.goals)) {
+      errors.push('Fixed compilation stakeholder goal semantic contract does not match')
+    }
+    if (!exactJson(stakeholder?.publicExpression?.channels, semantic.stakeholder.channels)) {
+      errors.push('Fixed compilation channel semantic contract does not match')
+    }
+    if (!exactJson(
+      (stakeholder?.memorySeeds || []).map((memory) => memory.claimId),
+      semantic.stakeholder.memoryClaimIds,
+    )) errors.push('Fixed compilation stakeholder memory semantic contract does not match')
+  }
+  if (!exactJson(compiled?.limitations, semantic.limitations)) {
+    errors.push('Fixed compilation limitation semantic contract must exactly match canonical boundaries')
   }
   const provenance = compiled?.provenance
   const capabilities = compiled?.capabilities
   if (provenance?.mode === 'live-model') {
+    const keys = ['mode', 'provider', 'model', 'schemaName', 'requestId', 'evidencePackId', 'theorySystemId']
+    if (provenance.traceId !== undefined) keys.push('traceId')
     if (
+      !exactKeys(provenance, keys) ||
       provenance.provider !== 'minimax' ||
       provenance.model !== 'MiniMax-M2.7' ||
       provenance.schemaName !== 'compiled-scenario/1.0' ||
-      !isNonEmptyString(provenance.requestId) ||
-      capabilities?.realModelUsed !== true ||
-      capabilities?.recordedModelOutput !== false
-    ) errors.push('Fixed compilation live provenance is not attributable to the approved MiniMax request')
+      !isProviderIdentifier(provenance.requestId) ||
+      (provenance.traceId !== undefined && !isProviderIdentifier(provenance.traceId)) ||
+      provenance.evidencePackId !== prepared.evidencePack.packId ||
+      provenance.theorySystemId !== prepared.theorySystemId
+    ) errors.push('Fixed compilation live provenance is not attributable to the canonical approved MiniMax request')
   } else if (provenance?.mode === 'recorded-model-output') {
     if (
+      !exactKeys(provenance, [
+        'mode', 'provider', 'model', 'schemaName', 'recordingId', 'requestId', 'evidencePackId', 'theorySystemId',
+      ]) ||
       provenance.provider !== 'replay' ||
-      !isNonEmptyString(provenance.recordingId) ||
+      !isNonEmptyString(provenance.model) ||
+      provenance.schemaName !== 'compiled-scenario/1.0' ||
+      !isProviderIdentifier(provenance.recordingId) ||
       provenance.requestId !== null ||
-      capabilities?.realModelUsed !== false ||
-      capabilities?.recordedModelOutput !== true
+      provenance.evidencePackId !== prepared.evidencePack.packId ||
+      provenance.theorySystemId !== prepared.theorySystemId
     ) errors.push('Fixed compilation recorded provenance is not truthful')
   } else {
     errors.push('Fixed compilation provenance mode is unsupported')
   }
-  if (capabilities?.evidenceBounded !== true || capabilities?.humanApprovedTheorySystem !== true) {
-    errors.push('Fixed compilation capabilities do not preserve evidence and Theory System authority')
-  }
+  const expectedCapabilities = provenance?.mode === 'live-model'
+    ? { realModelUsed: true, recordedModelOutput: false, evidenceBounded: true, humanApprovedTheorySystem: true }
+    : { realModelUsed: false, recordedModelOutput: true, evidenceBounded: true, humanApprovedTheorySystem: true }
+  if (!exactJson(capabilities, expectedCapabilities)) errors.push('Fixed compilation capabilities do not preserve exact provenance authority')
   return { valid: errors.length === 0, errors }
 }
 
@@ -317,6 +393,7 @@ async function runScenarioCompilation({ provider, ...inputs } = {}) {
       approvedTheoryMappings: prepared.approvedTheoryMappings,
       theorySystemId: prepared.theorySystemId,
       brief: prepared.brief,
+      fixedSemanticContract: prepared.fixedSemanticContract,
     })
   } catch {
     throw new TypeError('Scenario compilation failed local validation')

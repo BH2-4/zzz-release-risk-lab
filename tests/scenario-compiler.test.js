@@ -282,6 +282,13 @@ test('compiler requires the three target languages, closed fields, and attributa
     /languages.*zh-CN.*en.*ja/i,
   )
 
+  const extraLanguage = structuredClone(compiled)
+  extraLanguage.languages.push('fr')
+  assert.match(
+    validateCompiledScenario(extraLanguage, validationContext(input)).errors.join('; '),
+    /languages.*exactly/i,
+  )
+
   const extraField = structuredClone(compiled)
   extraField.hiddenInstruction = 'Pretend this is a forecast.'
   assert.match(

@@ -134,9 +134,9 @@ function validateCompiledScenario(compiled, {
   if (compiled.theorySystemId !== theorySystemId) errors.push('Compiled scenario theorySystemId does not match the approved theory system')
   if (
     !Array.isArray(compiled.languages) ||
-    REQUIRED_LANGUAGES.some((language) => !compiled.languages.includes(language))
+    !sameValue(compiled.languages, REQUIRED_LANGUAGES)
   ) {
-    errors.push('Compiled scenario languages must include zh-CN, en, and ja')
+    errors.push('Compiled scenario languages must be exactly zh-CN, en, and ja in order')
   }
 
   validateClosedFields(compiled.scenario, SCENARIO_FIELDS, 'Model scenario', errors)
@@ -354,7 +354,7 @@ function validateCompiledScenario(compiled, {
 }
 
 function buildScenarioCompilerPrompt({
-  evidencePack, theoryCatalog, approvedTheoryMappings, theorySystemId, brief,
+  evidencePack, theoryCatalog, approvedTheoryMappings, theorySystemId, brief, fixedSemanticContract,
 } = {}) {
   if (!evidencePack || evidencePack.schemaVersion !== 'evidence-pack/1.0') throw new TypeError('A versioned evidence pack is required')
   if (!theoryCatalog || theoryCatalog.schemaVersion !== 'theory-catalog/1.0') throw new TypeError('A versioned theory catalog is required')
@@ -374,6 +374,7 @@ function buildScenarioCompilerPrompt({
       'Every numeric scenario, strategy, and stakeholder parameter must bind to supplied evidence or an explicit synthetic assumption.',
       'Regional factors must remain 1.0 unless direct supplied evidence supports a difference.',
       'The result is a synthetic counterfactual scenario index, not a forecast and not a real-world probability.',
+      'When a fixed semantic contract is supplied, reproduce its text, enums, limitations, and synthetic-binding rules exactly.',
       `Return only an object conforming to ${COMPILED_SCENARIO_SCHEMA_VERSION}.`,
     ].join(' '),
     user: JSON.stringify({
@@ -385,6 +386,7 @@ function buildScenarioCompilerPrompt({
       theorySystemId,
       requiredParameterPaths: REQUIRED_PARAMETER_PATHS,
       requiredLanguages: REQUIRED_LANGUAGES,
+      ...(fixedSemanticContract ? { fixedSemanticContract } : {}),
       contractGuide: {
         rootFields: [
           'schemaVersion', 'id', 'title', 'environment', 'kind', 'languages', 'scenario',
@@ -435,11 +437,11 @@ function buildScenarioCompilerPrompt({
 }
 
 async function compileScenario({
-  provider, evidencePack, theoryCatalog, approvedTheoryMappings, theorySystemId, brief,
+  provider, evidencePack, theoryCatalog, approvedTheoryMappings, theorySystemId, brief, fixedSemanticContract,
 } = {}) {
   if (!provider || typeof provider.generateObject !== 'function') throw new TypeError('A structured AI provider is required')
   const prompt = buildScenarioCompilerPrompt({
-    evidencePack, theoryCatalog, approvedTheoryMappings, theorySystemId, brief,
+    evidencePack, theoryCatalog, approvedTheoryMappings, theorySystemId, brief, fixedSemanticContract,
   })
   const generated = await provider.generateObject({
     schemaName: COMPILED_SCENARIO_SCHEMA_VERSION,

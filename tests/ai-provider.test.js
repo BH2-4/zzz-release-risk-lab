@@ -64,6 +64,7 @@ test('MiniMax M2.7 provider makes one bounded non-streaming request with body-id
       { role: 'user', content: 'Compile the approved fixed slice.' },
     ],
     temperature: 0.1,
+    max_tokens: 8192,
     reasoning_split: true,
     stream: false,
   })
@@ -195,6 +196,71 @@ test('MiniMax adapter requires the exact approved model and ignores absent trace
   const result = await provider.generateObject({ schemaName: 'contract', system: 'system', user: 'user' })
   assert.equal(Object.hasOwn(result.provenance, 'traceId'), false)
   assert.equal(result.provenance.requestId, 'body-id')
+})
+
+test('MiniMax rejects oversized bodies and reflected or structured provenance identifiers without retry', async () => {
+  const identifierCases = [
+    ['secret body id', SECRET_SENTINEL, null, 'bounded system', ''],
+    ['prompt body id', PROMPT_SENTINEL, null, `bounded ${PROMPT_SENTINEL}`, ''],
+    ['reasoning trace id', 'safe-body-id', REASONING_SENTINEL, 'bounded system', REASONING_SENTINEL],
+    ['structured body id', '{"raw":"response"}', null, 'bounded system', ''],
+  ]
+  for (const [name, id, traceId, system, reasoning] of identifierCases) {
+    let fetchCount = 0
+    const provider = createMiniMaxM27Provider({
+      baseUrl: 'https://api.minimaxi.com/v1',
+      apiKey: SECRET_SENTINEL,
+      fetchImpl: async () => {
+        fetchCount += 1
+        return {
+          ok: true,
+          headers: { get: () => traceId },
+          json: async () => ({
+            id,
+            choices: [{ message: { content: '{"ok":true}', reasoning_content: reasoning } }],
+          }),
+        }
+      },
+    })
+    await assert.rejects(
+      () => provider.generateObject({ schemaName: 'contract', system, user: 'bounded user' }),
+      (error) => {
+        assert.match(error.message, /metadata|request id/i, name)
+        for (const sentinel of [SECRET_SENTINEL, PROMPT_SENTINEL, REASONING_SENTINEL, RESPONSE_SENTINEL]) {
+          assert.equal(error.message.includes(sentinel), false, name)
+        }
+        return true
+      },
+    )
+    assert.equal(fetchCount, 1, name)
+  }
+
+  let reads = 0
+  const oversized = createMiniMaxM27Provider({
+    baseUrl: 'https://api.minimaxi.com/v1',
+    apiKey: SECRET_SENTINEL,
+    fetchImpl: async () => ({
+      ok: true,
+      headers: { get: () => null },
+      body: {
+        getReader() {
+          return {
+            async read() {
+              reads += 1
+              if (reads === 1) return { done: false, value: new Uint8Array(1024 * 1024 + 1) }
+              return { done: true }
+            },
+            async cancel() {},
+          }
+        },
+      },
+    }),
+  })
+  await assert.rejects(
+    () => oversized.generateObject({ schemaName: 'contract', system: 'bounded system', user: 'bounded user' }),
+    (error) => error.message === 'MiniMax response body exceeded the size limit',
+  )
+  assert.equal(reads, 1)
 })
 
 test('OpenAI-compatible provider sends a server-side structured request without exposing its key', async () => {

@@ -1,5 +1,9 @@
 'use strict'
 
+const MINIMAX_MAX_COMPLETION_TOKENS = 8192
+const MINIMAX_MAX_RESPONSE_BYTES = 1024 * 1024
+const PROVIDER_IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/
+
 function requiredString(value, label) {
   if (typeof value !== 'string' || value.trim().length === 0) throw new TypeError(`${label} is required`)
   return value.trim()
@@ -47,6 +51,51 @@ function parseModelObject(content) {
   }
 }
 
+function responseSizeError() {
+  const error = new Error('response-size-limit')
+  error.code = 'MINIMAX_RESPONSE_SIZE'
+  return error
+}
+
+async function readBoundedJson(response) {
+  let text
+  if (response?.body && typeof response.body.getReader === 'function') {
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let bytes = 0
+    let chunks = ''
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      if (!(value instanceof Uint8Array)) throw new TypeError('invalid response chunk')
+      bytes += value.byteLength
+      if (bytes > MINIMAX_MAX_RESPONSE_BYTES) {
+        await reader.cancel().catch(() => {})
+        throw responseSizeError()
+      }
+      chunks += decoder.decode(value, { stream: true })
+    }
+    text = chunks + decoder.decode()
+  } else if (typeof response?.text === 'function') {
+    text = await response.text()
+    if (Buffer.byteLength(text, 'utf8') > MINIMAX_MAX_RESPONSE_BYTES) throw responseSizeError()
+  } else {
+    const value = await response.json()
+    text = JSON.stringify(value)
+    if (Buffer.byteLength(text, 'utf8') > MINIMAX_MAX_RESPONSE_BYTES) throw responseSizeError()
+  }
+  return JSON.parse(text)
+}
+
+function validatedProviderIdentifier(value, forbiddenValues) {
+  if (typeof value !== 'string' || value !== value.trim() || !PROVIDER_IDENTIFIER_PATTERN.test(value)) return null
+  for (const forbidden of forbiddenValues) {
+    if (typeof forbidden !== 'string' || forbidden.length === 0) continue
+    if (value === forbidden || value.includes(forbidden) || forbidden.includes(value)) return null
+  }
+  return value
+}
+
 function createMiniMaxM27Provider({
   baseUrl,
   apiKey,
@@ -64,13 +113,16 @@ function createMiniMaxM27Provider({
   return Object.freeze({
     async generateObject({ schemaName, system, user } = {}) {
       const contract = requiredString(schemaName, 'Schema name')
+      const systemPrompt = requiredString(system, 'System prompt')
+      const userPrompt = requiredString(user, 'User prompt')
       const body = {
         model: modelName,
         messages: [
-          { role: 'system', content: requiredString(system, 'System prompt') },
-          { role: 'user', content: requiredString(user, 'User prompt') },
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
         ],
         temperature: 0.1,
+        max_tokens: MINIMAX_MAX_COMPLETION_TOKENS,
         reasoning_split: true,
         stream: false,
       }
@@ -94,16 +146,26 @@ function createMiniMaxM27Provider({
       }
       let payload
       try {
-        payload = await response.json()
-      } catch {
+        payload = await readBoundedJson(response)
+      } catch (error) {
+        if (error?.code === 'MINIMAX_RESPONSE_SIZE') {
+          throw new Error('MiniMax response body exceeded the size limit')
+        }
         throw new Error('MiniMax response body was not valid JSON')
       }
-      if (typeof payload?.id !== 'string' || payload.id.trim().length === 0) {
+      const message = payload?.choices?.[0]?.message
+      const requestId = validatedProviderIdentifier(payload?.id, [
+        secret,
+        systemPrompt,
+        userPrompt,
+        message?.reasoning_content,
+      ])
+      if (!requestId) {
         throw new Error('MiniMax response did not include a request id')
       }
       let object
       try {
-        object = parseModelObject(payload?.choices?.[0]?.message?.content)
+        object = parseModelObject(message?.content)
       } catch {
         throw new Error('MiniMax response did not contain a valid JSON object')
       }
@@ -112,7 +174,7 @@ function createMiniMaxM27Provider({
         provider: 'minimax',
         model: modelName,
         schemaName: contract,
-        requestId: payload.id.trim(),
+        requestId,
       }
       let traceId = null
       try {
@@ -120,7 +182,16 @@ function createMiniMaxM27Provider({
       } catch {
         throw new Error('MiniMax response metadata could not be read')
       }
-      if (typeof traceId === 'string' && traceId.trim().length > 0) provenance.traceId = traceId.trim()
+      if (traceId !== null && traceId !== undefined && traceId !== '') {
+        const validatedTraceId = validatedProviderIdentifier(traceId, [
+          secret,
+          systemPrompt,
+          userPrompt,
+          message?.reasoning_content,
+        ])
+        if (!validatedTraceId) throw new Error('MiniMax response metadata was invalid')
+        provenance.traceId = validatedTraceId
+      }
       return { object, provenance }
     },
   })
