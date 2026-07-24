@@ -28,9 +28,9 @@ ProgramE 要把《绝区零》全球发行中的公开证据、社会学理论�
 本地已完成默认 Mac 门禁与 Theory CLI 生命周期：
 
 - Focused Theory gates：
-  `tests/theory-agent-cli.test.js`、`tests/theory-agent-cli-races.test.js`、`tests/theory-agent-security.test.js` 共 31/31 通过。
+  `tests/theory-agent-cli-authority.test.js`、`tests/theory-agent-security.test.js`、`tests/theory-agent.test.js`、`tests/compile-scenario-cli.test.js`、`tests/theory-agent-cli.test.js`、`tests/theory-agent-cli-races.test.js` 共 60/60 通过。
 - 全量 Node tests：
-  `npm test` 共 145/145 通过。
+  `npm test` 共 153/153 通过。
 - Build gate：
   `npm run build` 通过。
 - E2E gate：
