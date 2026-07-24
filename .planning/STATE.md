@@ -6,7 +6,7 @@ current_phase: 1
 current_phase_name: Trustworthy Theory Pipeline
 status: executing
 stopped_at: Completed ZZZ-01-02-PLAN.md
-last_updated: "2026-07-24T00:58:54.966Z"
+last_updated: "2026-07-24T01:21:42.404Z"
 last_activity: 2026-07-24
 last_activity_desc: Phase 1 execution started
 progress:
@@ -48,7 +48,7 @@ Progress: [█████░░░░░] 50%
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase ZZZ-01 P01 | 7 min | 2 tasks | 6 files |
-| Phase ZZZ-01 P02 | 7 min | 2 tasks | 1 files |
+| Phase ZZZ-01 P02 | 18 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -62,6 +62,7 @@ Progress: [█████░░░░░] 50%
 - [Phase ZZZ-01]: Port the compile-scenario filesystem boundary locally while preserving the Theory Agent CLI surface.
 - [Phase ZZZ-01]: Resolve the complete protected artifact set before constructing any fixture or live provider.
 - [Phase ZZZ-01]: Expose only artifact labels and project-relative paths for malformed JSON errors.
+- [Phase ZZZ-01]: Bind Theory run writes to inherited directory descriptors and native dir_fd operations for atomic no-clobber and race-safe replacement.
 
 ### Pending Todos
 
