@@ -152,3 +152,35 @@ test('review rejects a recomputed pending mapping invented outside current input
     now: '2026-07-24T01:51:00+08:00',
   }))
 })
+
+test('resume rejects recomputed approved semantics without reflecting validator contents', async (context) => {
+  const fixture = createProjectLocalRun(context)
+  await startPending(fixture)
+  await runCommand({
+    argv: ['review', '--decision', 'approve', '--reviewer', 'authority-test-reviewer', '--run', fixture.runRelative],
+    env: fixture.env,
+    now: '2026-07-24T01:51:00+08:00',
+  })
+  const secret = `RESUME_MAPPING_SECRET_${crypto.randomUUID()}`
+  const tampered = JSON.parse(fs.readFileSync(fixture.runPath, 'utf8'))
+  tampered.mapping.mappings[0].theoryId = `theory-invented-${secret}`
+  const mappingDigest = digestValue(tampered.mapping)
+  tampered.audit.mappingDigest = mappingDigest
+  const auditDigest = digestValue(tampered.audit)
+  tampered.checkpoint.targetDigest = mappingDigest
+  tampered.checkpoint.auditDigest = auditDigest
+  tampered.events[0].artifactDigests = [mappingDigest, auditDigest]
+  tampered.review.targetDigest = mappingDigest
+  const unsignedReview = structuredClone(tampered.review)
+  delete unsignedReview.id
+  tampered.review.id = `theory-review:${digestValue(unsignedReview)}`
+  tampered.reviews[tampered.reviews.length - 1] = structuredClone(tampered.review)
+  tampered.events.at(-1).artifactDigests = [digestValue(tampered.review)]
+  writeJson(fixture.runPath, tampered)
+
+  await assertRejectedWithoutMutation(fixture, secret, () => runCommand({
+    argv: ['resume', '--run', fixture.runRelative],
+    env: fixture.env,
+    now: '2026-07-24T01:52:00+08:00',
+  }))
+})
