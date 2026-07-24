@@ -24,6 +24,7 @@ key-files:
     - src/theory-agent.js
     - tests/theory-mapper.test.js
     - tests/theory-agent-security.test.js
+    - tests/theory-agent.test.js
 
 key-decisions:
   - "Derive realModelUsed exclusively from the validated provenance mode."
@@ -34,7 +35,7 @@ patterns-established:
   - "Closed provenance: every accepted record belongs to exactly one supported mode with compatible fields."
   - "Lineage validation: mapping provenance is revalidated after persistence and compared exactly with finalized System provenance."
 
-requirements-completed: [TRUST-01, TRUST-02, TRUST-03, TRUST-04]
+requirements-completed: [TRUST-02]
 
 coverage:
   - id: D1
@@ -46,7 +47,7 @@ coverage:
         status: pass
     human_judgment: false
   - id: D2
-    description: "The three provenance modes accept only compatible fields and capabilities and reject missing, unknown, contradictory, or relabeled records."
+    description: "The three provenance modes accept only compatible fields and boolean capabilities and reject missing, unknown, contradictory, malformed, or relabeled records."
     requirement: TRUST-02
     verification:
       - kind: unit
@@ -80,12 +81,12 @@ status: complete
 - **Started:** 2026-07-23T23:57:11Z
 - **Completed:** 2026-07-24T00:04:29Z
 - **Tasks:** 2
-- **Files modified:** 6
+- **Files modified:** 7
 
 ## Accomplishments
 
 - The offline CLI path carries the exact repository-relative fixture path and `digestValue(fixture)` into the approved Theory System with `realModelUsed: false`.
-- `validateTheoryProvenance` closes deterministic fixture, recorded output, and live model modes and derives model capability from the validated mode.
+- `validateTheoryProvenance` closes deterministic fixture, recorded output, and live model modes, derives model capability from the validated mode, and rejects supplied non-boolean capability values.
 - Run and System validators reject missing or contradictory provenance, including finalized tampering after the attacker recomputes content identity.
 
 ## Task Commits
@@ -94,6 +95,7 @@ Each task was committed atomically:
 
 1. **Task 1: Trace one deterministic fixture from CLI input to approved Theory System provenance** - `8764e9e` (feat)
 2. **Task 2: Expand the closed provenance contract across modes and persisted lineage** - `aebaf0f` (feat)
+3. **Code review fix: Reject malformed model capability before finalization** - `afbb976` (fix)
 
 ## Files Created/Modified
 
@@ -103,6 +105,7 @@ Each task was committed atomically:
 - `src/theory-agent.js` - Revalidates persisted provenance and enforces mapping/System lineage consistency.
 - `tests/theory-mapper.test.js` - Covers valid modes and missing, unknown, contradictory, and relabeled provenance.
 - `tests/theory-agent-security.test.js` - Covers persisted mapping and finalized System provenance tampering.
+- `tests/theory-agent.test.js` - Covers direct finalization with missing and non-boolean capability values.
 
 ## Decisions Made
 
@@ -112,15 +115,27 @@ Each task was committed atomically:
 
 ## Deviations from Plan
 
-None - plan implementation executed exactly as written. The full Task 2 command exposed known downstream work already assigned to Plan 01-02; it was not treated as an acceptance waiver or pulled into this plan.
+### Auto-fixed Issues
+
+**1. [Rule 1 - Bug] Rejected malformed model capability values before finalization**
+- **Found during:** Post-plan code review
+- **Issue:** Explicit non-boolean capability values were ignored by provenance validation, while direct finalization coerced malformed or missing values to `false`.
+- **Fix:** The validator now rejects any supplied non-boolean capability, and `finalizeTheorySystem` requires an existing boolean before constructing provenance.
+- **Files modified:** `src/theory-mapper.js`, `src/theory-system.js`, `tests/theory-mapper.test.js`, `tests/theory-agent.test.js`
+- **Verification:** Focused provenance/agent/security tests pass 22/22, including missing, string, numeric, and object capability cases.
+- **Committed in:** `afbb976`
+
+**Total deviations:** 1 auto-fixed bug from post-plan review. **Impact:** Closes a fail-open type-coercion path without changing valid provenance behavior or Plan 01-02 scope.
+
+The full Task 2 command also exposed known downstream work already assigned to Plan 01-02; it is not treated as an acceptance waiver or pulled into this plan.
 
 ## Verification Results
 
 - PASS: `node --test --test-name-pattern="formal data completes" tests/theory-agent-cli.test.js` - 1/1.
-- PASS: `node --test tests/theory-mapper.test.js tests/theory-agent.test.js tests/theory-agent-security.test.js` - 21/21.
+- PASS: `node --test tests/theory-mapper.test.js tests/theory-agent.test.js tests/theory-agent-security.test.js` - 22/22.
 - PASS: `git diff --check`.
 - PASS: `git diff -- tests/theory-agent-cli.test.js` is empty.
-- DOWNSTREAM BLOCKED: exact Task 2 command `node --test tests/theory-mapper.test.js tests/theory-agent.test.js tests/theory-agent-security.test.js tests/theory-agent-cli.test.js` - 22/27; all provenance/domain assertions pass, while five pre-existing locked CLI filesystem-security cases remain red for Plan 01-02.
+- DOWNSTREAM BLOCKED: exact Task 2 command `node --test tests/theory-mapper.test.js tests/theory-agent.test.js tests/theory-agent-security.test.js tests/theory-agent-cli.test.js` - 23/28; all provenance/domain assertions pass, while five pre-existing locked CLI filesystem-security cases remain red for Plan 01-02.
 
 The five Plan 01-02 blockers are input symlink escape rejection, symlinked output-parent rejection, exclusive random temporary writes, protected-input overwrite rejection, and malformed-JSON error redaction.
 
@@ -139,8 +154,8 @@ None - no external service configuration required.
 
 ## Self-Check: PASSED
 
-- Summary and all six declared product/test files exist.
-- Task commits `8764e9e` and `aebaf0f` are present in git history.
+- Summary and all seven declared product/test files exist.
+- Task and review-fix commits `8764e9e`, `aebaf0f`, and `afbb976` are present in git history.
 
 ---
 *Phase: ZZZ-01-trustworthy-theory-pipeline*
