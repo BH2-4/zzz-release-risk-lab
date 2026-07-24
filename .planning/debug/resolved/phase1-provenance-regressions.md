@@ -2,7 +2,7 @@
 status: resolved
 trigger: "Phase 1 Wave 1 post-merge npm test found 12 new provenance compatibility regressions in addition to the five known Plan 01-02 CLI filesystem failures."
 created: 2026-07-24T08:10:00+08:00
-updated: 2026-07-24T09:40:00+08:00
+updated: 2026-07-24T08:35:46+08:00
 phase: 1
 plan: 01-01
 ---
@@ -58,75 +58,55 @@ tdd_checkpoint: not-active
 
 ## Evidence
 
-- timestamp: 2026-07-24T09:40:00+08:00
-  observation: git diff --check passes, tests/theory-agent-cli.test.js remains unchanged, and commit 8f03485 contains only the two intended test fixture migrations.
+Evidence is ordered from final verification back to initial reproduction. Exact per-event wall-clock times were not retained, so this archive intentionally records no inferred timestamps.
+
+- observation: git diff --check passes, tests/theory-agent-cli.test.js remains unchanged, and commit 8f03485 contains only the two intended test fixture migrations.
   implication: The final code diff is clean, atomic, Plan 01-01-scoped, and preserves unrelated worktree changes.
-- timestamp: 2026-07-24T09:35:00+08:00
-  observation: npm run test:e2e initially could not bind the local server inside the sandbox, then passes under approved local-server permissions with 10 passed, 4 skipped, and 0 failed.
+- observation: npm run test:e2e initially could not bind the local server inside the sandbox, then passes under approved local-server permissions with 10 passed, 4 skipped, and 0 failed.
   implication: The required E2E gate passes; the first attempt was an environment permission constraint rather than an application failure.
-- timestamp: 2026-07-24T09:26:00+08:00
-  observation: Full npm test reports 128 tests, 123 passing, and exactly 5 failing; every compilation-pipeline and compile-scenario-cli case passes, and the only failures are the five known locked tests/theory-agent-cli.test.js Plan 01-02 filesystem cases.
+- observation: Full npm test reports 128 tests, 123 passing, and exactly 5 failing; every compilation-pipeline and compile-scenario-cli case passes, and the only failures are the five known locked tests/theory-agent-cli.test.js Plan 01-02 filesystem cases.
   implication: The full-suite acceptance threshold is met and no new regression remains in Plan 01-01 scope.
-- timestamp: 2026-07-24T09:22:00+08:00
-  observation: npm run build exits 0 and builds RiskCommitment at 556 bytes.
+- observation: npm run build exits 0 and builds RiskCommitment at 556 bytes.
   implication: The required build gate passes after the fixture-only migration.
-- timestamp: 2026-07-24T09:20:00+08:00
-  observation: Reapplying the same fixture migration returns the focused command to 15 tests, 15 passing, and 0 failing.
+- observation: Reapplying the same fixture migration returns the focused command to 15 tests, 15 passing, and 0 failing.
   implication: Guardrail revert-and-reconfirm passes with bug_returned_on_revert and fixed_on_reapply both true.
-- timestamp: 2026-07-24T09:16:00+08:00
-  observation: Temporarily reversing only the fixture migration restores exactly 12 failures and 3 passes, with the original unsupported-mode, unknown-field, missing-path, and missing-digest errors.
+- observation: Temporarily reversing only the fixture migration restores exactly 12 failures and 3 passes, with the original unsupported-mode, unknown-field, missing-path, and missing-digest errors.
   implication: Guardrail revert-and-reconfirm has proven the migrated fixture metadata is causally necessary; reapplication remains to confirm sufficiency.
-- timestamp: 2026-07-24T09:12:00+08:00
-  observation: Adjacent provenance, Theory Agent, and security suites report 22 tests, 22 passing, and 0 failing, including unknown-mode, malformed capability, and tamper rejection cases.
+- observation: Adjacent provenance, Theory Agent, and security suites report 22 tests, 22 passing, and 0 failing, including unknown-mode, malformed capability, and tamper rejection cases.
   implication: Guardrail adjacent-tests signal passes and the fixture migration does not weaken the closed production contract.
-- timestamp: 2026-07-24T09:12:00+08:00
-  observation: The fix diff is 10 additions and 2 replacements confined to fixture metadata/imports; it deletes no assertion or production behavior, and tests/theory-agent-cli.test.js has an empty diff.
+- observation: The fix diff is 10 additions and 2 replacements confined to fixture metadata/imports; it deletes no assertion or production behavior, and tests/theory-agent-cli.test.js has an empty diff.
   implication: Guardrail no-op/deletion signal passes and the locked attack/CLI test remains unchanged.
-- timestamp: 2026-07-24T09:05:00+08:00
-  observation: The exact post-fix reproduction reports 15 tests, 15 passing, and 0 failing.
+- observation: The exact post-fix reproduction reports 15 tests, 15 passing, and 0 failing.
   implication: Guardrail target-test signal passes and all twelve original regressions are removed by the fixture-only migration.
-- timestamp: 2026-07-24T09:00:00+08:00
-  observation: After replacing both stale provenance records, all four compilation-pipeline tests pass; the ten CLI tests now fail only because tests/compile-scenario-cli.test.js did not previously import digestValue.
+- observation: After replacing both stale provenance records, all four compilation-pipeline tests pass; the ten CLI tests now fail only because tests/compile-scenario-cli.test.js did not previously import digestValue.
   implication: The provenance migration fixes the original schema failures; one test-helper import is required to compute the canonical checked fixture digest.
-- timestamp: 2026-07-24T08:55:00+08:00
-  observation: Phase 1.25 SBFL was skipped because Node's configured coverage command provides aggregate process coverage, not the required per-test execution spectrum.
+- observation: Phase 1.25 SBFL was skipped because Node's configured coverage command provides aggregate process coverage, not the required per-test execution spectrum.
   implication: Direct stack traces and the two shared fixture constructors provide unambiguous localization without inventing an Ochiai ranking.
-- timestamp: 2026-07-24T08:55:00+08:00
-  observation: Plan 01-01 and passing theory-mapper/security tests require deterministic-fixture provenance to carry fixturePath plus digestValue(fixture), and explicitly retain fail-closed unknown-mode/unknown-field behavior.
+- observation: Plan 01-01 and passing theory-mapper/security tests require deterministic-fixture provenance to carry fixturePath plus digestValue(fixture), and explicitly retain fail-closed unknown-mode/unknown-field behavior.
   implication: Fixture migration is the specified compatibility fix; relaxing src/theory-mapper.js would violate the production contract.
-- timestamp: 2026-07-24T08:55:00+08:00
-  observation: Git history shows the affected tests last changed in 56a203b, while 8764e9e later tightened the provider contract without migrating them; both proposed provenance records validate successfully in isolation.
+- observation: Git history shows the affected tests last changed in 56a203b, while 8764e9e later tightened the provider contract without migrating them; both proposed provenance records validate successfully in isolation.
   implication: Differential evidence confirms stale test data rather than a validator or environment defect.
-- timestamp: 2026-07-24T08:55:00+08:00
-  observation: No debug knowledge-base entry exists for a prior matching resolution.
+- observation: No debug knowledge-base entry exists for a prior matching resolution.
   implication: The diagnosis rests on current direct evidence rather than an assumed known pattern.
-- timestamp: 2026-07-24T08:42:00+08:00
-  observation: The focused command `node --test tests/compilation-pipeline.test.js tests/compile-scenario-cli.test.js` deterministically reports 15 tests, 3 passing, and exactly 12 failing.
+- observation: The focused command `node --test tests/compilation-pipeline.test.js tests/compile-scenario-cli.test.js` deterministically reports 15 tests, 3 passing, and exactly 12 failing.
   implication: The symptom is a reproducible Bohrbug suitable for direct fixture migration and before/after comparison.
-- timestamp: 2026-07-24T08:42:00+08:00
-  observation: Both compilation-pipeline failures stop at theorySystemFixture provenance mode manual-test-fixture; all ten CLI failures stop while mappingProvider deterministic provenance supplies provider/model/requestId but lacks fixturePath/fixtureDigest.
+- observation: Both compilation-pipeline failures stop at theorySystemFixture provenance mode manual-test-fixture; all ten CLI failures stop while mappingProvider deterministic provenance supplies provider/model/requestId but lacks fixturePath/fixtureDigest.
   implication: All failures converge on two test-only constructors before their intended assertions, with no observed production validator defect.
-- timestamp: 2026-07-24T08:35:00+08:00
-  observation: No project-defined skills or configured gsd-debugger agent skills were found; the worktree already contains unrelated .planning/config.json and .codex changes.
+- observation: No project-defined skills or configured gsd-debugger agent skills were found; the worktree already contains unrelated .planning/config.json and .codex changes.
   implication: Follow the repository debugger protocol directly and constrain edits to stale test fixtures plus this debug artifact, preserving unrelated worktree state.
-- timestamp: 2026-07-24T08:20:00+08:00
-  observation: The exact `gsd-debugger` agent type is unavailable in this runtime; the session manager dispatched the required fresh generic/default-agent workaround, with `.codex/agents/gsd-debugger.toml` as mandatory first reading.
+- observation: The exact `gsd-debugger` agent type is unavailable in this runtime; the session manager dispatched the required fresh generic/default-agent workaround, with `.codex/agents/gsd-debugger.toml` as mandatory first reading.
   implication: Role separation is preserved through the documented generic-agent workaround; investigation and edits remain delegated to a fresh debugger context.
-- timestamp: 2026-07-24T08:10:00+08:00
-  observation: `npm run build` exits 0 and builds RiskCommitment at 556 bytes.
+- observation: `npm run build` exits 0 and builds RiskCommitment at 556 bytes.
   implication: The regression is runtime/test-contract compatibility, not compilation failure.
-- timestamp: 2026-07-24T08:10:00+08:00
-  observation: `npm test` exits non-zero with 17 failures; 12 are outside the five locked Plan 01-02 filesystem cases.
+- observation: `npm test` exits non-zero with 17 failures; 12 are outside the five locked Plan 01-02 filesystem cases.
   implication: Wave 1 cannot close until the twelve new regressions are fixed.
 
 ## Eliminated
 
 - hypothesis: The closed production validator is rejecting valid deterministic provenance.
   reason: The proposed exact path/digest records and the checked security fixture pass the same validator, while the plan requires rejection of the observed obsolete shapes.
-  timestamp: 2026-07-24T08:55:00+08:00
 - hypothesis: Node, dependency, or filesystem environment drift causes the failures.
   reason: Failures reproduce deterministically at schema validation, and both replacement records validate in the current runtime before any filesystem-dependent CLI behavior.
-  timestamp: 2026-07-24T08:55:00+08:00
 - hypothesis: The five Theory Agent CLI filesystem failures were introduced by Plan 01-01.
   reason: They match the pre-existing Plan 01-02 acceptance set and were already red before Wave 1.
 
