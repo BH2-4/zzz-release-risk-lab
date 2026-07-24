@@ -26,9 +26,6 @@ function provider() {
         object: structuredClone(fixtureMapping),
         provenance: {
           mode: 'deterministic-fixture',
-          provider: 'test-fixture',
-          model: null,
-          requestId: null,
           fixturePath: 'data/theory-agent/zzz-1-4-fade-mapping-fixture.json',
           fixtureDigest: digestValue(fixtureMapping),
         },
@@ -109,6 +106,30 @@ test('review and system digests must resolve to the current mapping', async () =
   const validation = validateTheoryAgentRun(tampered, inputs)
   assert.equal(validation.valid, false)
   assert.match(validation.errors.join('; '), /mapping digest|review target|theory system/i)
+})
+
+test('persisted mapping provenance tampering fails the reusable domain contract', async () => {
+  const ready = await readyRun()
+  const tampered = structuredClone(ready)
+  delete tampered.mapping.provenance.fixturePath
+
+  const validation = validateTheoryAgentRun(tampered, inputs)
+  assert.equal(validation.valid, false)
+  assert.match(validation.errors.join('; '), /provenance.*fixturePath/i)
+})
+
+test('finalized provenance tampering fails after the attacker recomputes content identity', async () => {
+  const ready = await readyRun()
+  const tampered = structuredClone(ready)
+  tampered.theorySystem.provenance.realModelUsed = true
+  const unsignedSystem = structuredClone(tampered.theorySystem)
+  delete unsignedSystem.id
+  tampered.theorySystem.id = `theory-system:${digestValue(unsignedSystem)}`
+  tampered.events.at(-1).artifactDigests = [digestValue(tampered.theorySystem)]
+
+  const validation = validateTheoryAgentRun(tampered, inputs)
+  assert.equal(validation.valid, false)
+  assert.match(validation.errors.join('; '), /provenance.*realModelUsed|realModelUsed.*provenance/i)
 })
 
 test('run events must form a complete monotonic state transition history', async () => {

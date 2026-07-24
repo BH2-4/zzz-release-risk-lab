@@ -178,6 +178,7 @@ function finalizeTheorySystem({ mapping, review, approvedExtractions, evidenceRe
   }
   const provenanceValidation = validateTheoryProvenance(provenance, {
     realModelUsed: mapping.capabilities?.realModelUsed,
+    requireRealModelUsed: true,
   })
   if (!provenanceValidation.valid) {
     throw new TypeError(`Theory provenance failed validation: ${provenanceValidation.errors.join('; ')}`)
@@ -223,6 +224,7 @@ function validateTheorySystem(system, { approvedExtractions, evidenceReview, led
   if (system.status !== 'approved') errors.push('Compilation requires an approved theory system')
   const provenanceValidation = validateTheoryProvenance(system.provenance, {
     realModelUsed: system.provenance?.realModelUsed,
+    requireRealModelUsed: true,
   })
   if (!provenanceValidation.valid) errors.push(...provenanceValidation.errors)
   if (!isSha256Digest(system.catalogDigest) || !isSha256Digest(system.ledgerDigest) ||

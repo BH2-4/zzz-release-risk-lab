@@ -32,7 +32,7 @@ function isRepositoryRelativePath(value) {
   return segments.length > 0 && segments.every((segment) => segment !== '' && segment !== '.' && segment !== '..')
 }
 
-function validateTheoryProvenance(provenance, { realModelUsed } = {}) {
+function validateTheoryProvenance(provenance, { realModelUsed, requireRealModelUsed = false } = {}) {
   const errors = []
   if (!provenance || typeof provenance !== 'object' || Array.isArray(provenance)) {
     return { valid: false, errors: ['Theory provenance must be an object'] }
@@ -76,6 +76,9 @@ function validateTheoryProvenance(provenance, { realModelUsed } = {}) {
   }
   if ('realModelUsed' in provenance && provenance.realModelUsed !== derivedRealModelUsed) {
     errors.push(`Theory provenance realModelUsed must be ${derivedRealModelUsed} for ${provenance.mode}`)
+  }
+  if (requireRealModelUsed && typeof provenance.realModelUsed !== 'boolean') {
+    errors.push('Theory provenance requires realModelUsed')
   }
   if (typeof realModelUsed === 'boolean' && realModelUsed !== derivedRealModelUsed) {
     errors.push(`Theory capability realModelUsed must be ${derivedRealModelUsed} for ${provenance.mode}`)

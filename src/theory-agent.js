@@ -2,7 +2,11 @@
 
 const { digestValue, isSha256Digest } = require('./artifact-digest.js')
 const { validateEvidenceLedger } = require('./evidence-ledger.js')
-const { mapTheories, validateTheoryMapping } = require('./theory-mapper.js')
+const {
+  mapTheories,
+  validateTheoryMapping,
+  validateTheoryProvenance,
+} = require('./theory-mapper.js')
 const {
   buildClaimResolution,
   finalizeTheorySystem,
@@ -476,6 +480,15 @@ function validateTheoryAgentRun(run, inputs) {
     errors.push('Theory agent run requires a mapping artifact')
   } else {
     if (run.mapping.reviewStatus !== 'pending-human-review') errors.push('Theory mapping must retain pending-human-review provenance')
+    const provenanceValidation = validateTheoryProvenance(run.mapping.provenance, {
+      realModelUsed: run.mapping.capabilities?.realModelUsed,
+    })
+    if (!provenanceValidation.valid) {
+      errors.push(...provenanceValidation.errors.map((error) => `Theory mapping provenance is invalid: ${error}`))
+    }
+    if (typeof run.mapping.capabilities?.realModelUsed !== 'boolean') {
+      errors.push('Theory mapping capabilities require realModelUsed')
+    }
     if (inputs) {
       const mappingValidation = validateTheoryMapping(run.mapping, inputs)
       if (!mappingValidation.valid) errors.push(...mappingValidation.errors.map((error) => `Theory mapping is invalid: ${error}`))
@@ -564,6 +577,13 @@ function validateTheoryAgentRun(run, inputs) {
       }
       if (run.theorySystem.provenance?.realModelUsed !== run.capabilities?.realModelUsed) {
         errors.push('Ready Theory System provenance does not match run capabilities')
+      }
+      const expectedProvenance = {
+        ...structuredClone(run.mapping?.provenance),
+        realModelUsed: run.mapping?.capabilities?.realModelUsed === true,
+      }
+      if (digestValue(run.theorySystem.provenance) !== digestValue(expectedProvenance)) {
+        errors.push('Ready Theory System provenance does not match the approved mapping provenance')
       }
       const unsignedSystem = structuredClone(run.theorySystem)
       delete unsignedSystem.id

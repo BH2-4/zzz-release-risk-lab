@@ -3,11 +3,13 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 
+const { digestValue } = require('../src/artifact-digest.js')
 const catalog = require('../data/evidence/theory-catalog.json')
 const {
   buildTheoryMappingPrompt,
   mapTheories,
   validateTheoryMapping,
+  validateTheoryProvenance,
 } = require('../src/theory-mapper.js')
 
 function approvedExtraction() {
@@ -127,4 +129,58 @@ test('AI theory mapper preserves provenance and always requires downstream human
   assert.equal(result.reviewStatus, 'pending-human-review')
   assert.equal(result.capabilities.realModelUsed, true)
   assert.equal(result.provenance.requestId, 'req-map')
+})
+
+test('theory provenance is a closed three-mode contract with derived model capability', () => {
+  const validModes = [
+    [{
+      mode: 'deterministic-fixture',
+      fixturePath: 'data/theory-agent/fixture.json',
+      fixtureDigest: digestValue(mapping()),
+    }, false],
+    [{
+      mode: 'live-model',
+      provider: 'openai-compatible',
+      model: 'mapper-model',
+      schemaName: 'theory-mapping/1.0',
+      requestId: 'req-live',
+    }, true],
+    [{
+      mode: 'recorded-model-output',
+      provider: 'replay',
+      model: 'mapper-model',
+      schemaName: 'theory-mapping/1.0',
+      recordingId: 'recording-1',
+      requestId: null,
+    }, false],
+  ]
+  for (const [provenance, realModelUsed] of validModes) {
+    const validation = validateTheoryProvenance(provenance, { realModelUsed })
+    assert.equal(validation.valid, true, validation.errors.join('; '))
+    assert.equal(validation.realModelUsed, realModelUsed)
+  }
+
+  const fixtureDigest = digestValue(mapping())
+  for (const [label, provenance, realModelUsed, pattern] of [
+    ['missing fixture path', { mode: 'deterministic-fixture', fixtureDigest }, false, /fixturePath/i],
+    ['missing fixture digest', { mode: 'deterministic-fixture', fixturePath: 'data/fixture.json' }, false, /fixtureDigest/i],
+    ['missing live request id', { mode: 'live-model', provider: 'test', model: 'mapper' }, true, /requestId/i],
+    ['unknown mode', { mode: 'invented-output' }, false, /unsupported.*mode/i],
+    ['unknown fixture field', {
+      mode: 'deterministic-fixture', fixturePath: 'data/fixture.json', fixtureDigest, provider: 'spoofed-live',
+    }, false, /unknown field/i],
+    ['contradictory live capability', {
+      mode: 'live-model', provider: 'test', model: 'mapper', requestId: 'req-live',
+    }, false, /realModelUsed/i],
+    ['recorded output relabeled as live', {
+      mode: 'live-model', provider: 'replay', model: 'mapper', requestId: null, recordingId: 'recording-1',
+    }, true, /unknown field|requestId/i],
+    ['recorded output claiming a live call', {
+      mode: 'recorded-model-output', recordingId: 'recording-1', realModelUsed: true,
+    }, false, /realModelUsed/i],
+  ]) {
+    const validation = validateTheoryProvenance(provenance, { realModelUsed })
+    assert.equal(validation.valid, false, `${label} must fail closed`)
+    assert.match(validation.errors.join('; '), pattern, label)
+  }
 })
