@@ -485,8 +485,8 @@ function validateTheoryAgentRun(run, inputs) {
     }
     const reviewEventIndex = Array.isArray(run.events) ? run.events.indexOf(reviewEvent) : -1
     const proposalEvent = reviewEventIndex > 0 ? run.events[reviewEventIndex - 1] : null
-    if (proposalEvent?.state !== 'AWAITING_HUMAN' || !proposalEvent?.artifactDigests?.includes(review.targetDigest)) {
-      errors.push(`Theory review history ${index + 1} target digest is not bound by its proposal event`)
+    if (proposalEvent?.state !== 'AWAITING_HUMAN' || proposalEvent?.artifactDigests?.[0] !== review.targetDigest) {
+      errors.push(`Theory review history ${index + 1} review target does not match its proposal mapping digest`)
     }
   }
 

@@ -579,6 +579,7 @@ async function runCommand({
 
       if (command === 'resume') {
         const inputs = inputValues(inputArtifacts)
+        assertAuthoritativeRun(run, inputs)
         const provider = run.state === 'REVISION_REQUESTED'
           ? createProvider(options, realRoot, env, fixtureArtifact)
           : undefined
