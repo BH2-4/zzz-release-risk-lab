@@ -51,6 +51,20 @@ function outputTransactionRequest({ operationId, targetName = 'run.json', expect
   }
 }
 
+test('status for a missing nested run does not create output directories', async (context) => {
+  const localDirectory = fs.mkdtempSync(path.join(projectRoot, '.tmp-theory-readonly-status-'))
+  const missingParent = path.join(localDirectory, 'missing', 'nested')
+  const runRelative = path.relative(projectRoot, path.join(missingParent, 'run.json'))
+  context.after(() => fs.rmSync(localDirectory, { recursive: true, force: true }))
+
+  await assert.rejects(
+    () => runCommand({ argv: ['status', '--run', runRelative] }),
+    /run output parent does not exist|theory run/i,
+  )
+
+  assert.equal(fs.existsSync(missingParent), false)
+})
+
 test('ordinary start atomically refuses a concurrently created run target', async (context) => {
   const localDirectory = fs.mkdtempSync(path.join(projectRoot, '.tmp-theory-no-clobber-'))
   const runPath = path.join(localDirectory, 'run.json')

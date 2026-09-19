@@ -11,6 +11,7 @@ const {
   applyTheoryReview,
   resumeTheoryAgent,
   startTheoryAgent,
+  validateTheoryAgentRun,
 } = require('../src/theory-agent.js')
 const { digestValue } = require('../src/artifact-digest.js')
 
@@ -188,7 +189,7 @@ function inspectPath(pathname) {
   }
 }
 
-function ensureSafeOutputParent(root, outputPath) {
+function ensureSafeOutputParent(root, outputPath, { createMissing = true } = {}) {
   const parentPath = path.dirname(outputPath)
   const relative = path.relative(root, parentPath)
   const segments = relative === '' ? [] : relative.split(path.sep)
@@ -197,6 +198,7 @@ function ensureSafeOutputParent(root, outputPath) {
     current = path.join(current, segment)
     let stat = inspectPath(current)
     if (!stat) {
+      if (!createMissing) throw new TypeError('Run output parent does not exist')
       fs.mkdirSync(current, { mode: 0o700 })
       stat = fs.lstatSync(current)
     }
@@ -298,10 +300,10 @@ function assertOutputDoesNotOverwriteInput(output, inputArtifacts) {
   if (collision) throw new TypeError(`Run output must not overwrite the ${collision.label} input artifact`)
 }
 
-function prepareRunOutput(root, relativePath, inputArtifacts) {
+function prepareRunOutput(root, relativePath, inputArtifacts, { createMissingParent = true } = {}) {
   const outputPath = resolveProjectPath(root, relativePath, 'Run output')
   const parentPath = path.dirname(outputPath)
-  const realParent = ensureSafeOutputParent(root, outputPath)
+  const realParent = ensureSafeOutputParent(root, outputPath, { createMissing: createMissingParent })
   const expectedParentStat = fs.statSync(realParent)
   const parentIdentity = { dev: String(expectedParentStat.dev), ino: String(expectedParentStat.ino) }
   let parentDescriptor = null
@@ -477,6 +479,11 @@ function summarize(run) {
   }
 }
 
+function assertAuthoritativeRun(run, inputs) {
+  const validation = validateTheoryAgentRun(run, inputs)
+  if (!validation.valid) throw new TypeError('Theory run authority validation failed')
+}
+
 async function runCommand({
   argv = process.argv.slice(2),
   env = process.env,
@@ -518,19 +525,26 @@ async function runCommand({
       }
     }
 
-    const output = prepareRunOutput(realRoot, runRelative, [])
+    const output = prepareRunOutput(realRoot, runRelative, [], { createMissingParent: false })
     try {
       const runArtifact = readJsonArtifact(inputContext, runRelative, 'Theory run')
       const run = runArtifact.value
       if (output.target.kind !== 'file' || !sameIdentity(output.target.identity, runArtifact.identity)) {
         throw new TypeError('Theory run changed after it was read')
       }
-      if (command === 'status') return { kind: 'run', summary: summarize(run), path: runRelative }
+      if (command === 'status') {
+        const inputArtifacts = loadInputArtifacts(inputContext, env)
+        assertOutputDoesNotOverwriteInput(output, Object.values(inputArtifacts))
+        assertAuthoritativeRun(run, inputValues(inputArtifacts))
+        return { kind: 'run', summary: summarize(run), path: runRelative }
+      }
 
       const inputArtifacts = loadInputArtifacts(inputContext, env)
       const fixtureArtifact = loadFixtureArtifact(inputContext, env)
       assertOutputDoesNotOverwriteInput(output, [...Object.values(inputArtifacts), fixtureArtifact])
       if (command === 'review') {
+        const inputs = inputValues(inputArtifacts)
+        assertAuthoritativeRun(run, inputs)
         const decision = options.decision
         if (!['approve', 'revise', 'reject'].includes(decision)) {
           throw new TypeError('Review requires --decision approve, revise, or reject')
@@ -539,6 +553,7 @@ async function runCommand({
         if (decision === 'revise' && !options.feedback) throw new TypeError('Revision review requires --feedback')
         const mappingDecision = decision === 'approve' ? 'approve' : decision
         const reviewed = applyTheoryReview({
+          ...inputs,
           run,
           review: {
             schemaVersion: 'theory-review/1.0',
@@ -564,6 +579,7 @@ async function runCommand({
 
       if (command === 'resume') {
         const inputs = inputValues(inputArtifacts)
+        assertAuthoritativeRun(run, inputs)
         const provider = run.state === 'REVISION_REQUESTED'
           ? createProvider(options, realRoot, env, fixtureArtifact)
           : undefined

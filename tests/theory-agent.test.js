@@ -242,6 +242,7 @@ test('approved mapping resumes into a content-addressed theory system', async ()
     now: '2026-07-24T10:00:00+08:00',
   })
   const approved = applyTheoryReview({
+    ...input,
     run: pending,
     review: {
       schemaVersion: 'theory-review/1.0',
@@ -341,6 +342,7 @@ test('one structured revision is allowed but a third mapping attempt is refused'
     ...input, provider, runId: 'run-revision', now: '2026-07-24T10:00:00+08:00',
   })
   const revisionRequested = applyTheoryReview({
+    ...input,
     run: pending,
     review: {
       schemaVersion: 'theory-review/1.0', targetDigest: pending.checkpoint.targetDigest,
@@ -357,6 +359,7 @@ test('one structured revision is allowed but a third mapping attempt is refused'
   assert.equal(revised.mapping.mappings[0].id, 'mapping-framing-fade-revised')
 
   const secondRevision = applyTheoryReview({
+    ...input,
     run: revised,
     review: {
       schemaVersion: 'theory-review/1.0', targetDigest: revised.checkpoint.targetDigest,
@@ -377,6 +380,7 @@ test('human review rejects stale target digests and model-invented theory ids', 
   })
   assert.throws(
     () => applyTheoryReview({
+      ...input,
       run: pending,
       review: {
         schemaVersion: 'theory-review/1.0', targetDigest: `sha256:${'0'.repeat(64)}`,

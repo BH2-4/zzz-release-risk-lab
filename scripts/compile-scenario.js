@@ -4,10 +4,14 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const { randomUUID } = require('node:crypto')
+const childProcess = require('node:child_process')
 
-const { createOpenAICompatibleProvider } = require('../src/ai-provider.js')
+const { createMiniMaxM27Provider } = require('../src/ai-provider.js')
 const { digestValue } = require('../src/artifact-digest.js')
-const { runScenarioCompilation } = require('../src/compilation-pipeline.js')
+const {
+  prepareScenarioCompilation,
+  runScenarioCompilation,
+} = require('../src/compilation-pipeline.js')
 const {
   auditTheoryMapping,
   validateTheoryAgentRun,
@@ -15,6 +19,7 @@ const {
 const { finalizeTheorySystem } = require('../src/theory-system.js')
 
 const projectRoot = path.resolve(__dirname, '..')
+const secureOutputHelper = path.join(__dirname, 'secure-run-output.py')
 const defaults = Object.freeze({
   approvedExtractions: 'data/evidence/extractions/zzz-1-4-fade-approved.json',
   evidenceReview: 'data/evidence/reviews/zzz-1-4-fade-evidence-review.json',
@@ -114,9 +119,12 @@ function resolveInputPath(root, relativePath, label) {
 function readJsonArtifact(root, relativePath, label) {
   const inputPath = resolveInputPath(root, relativePath, label)
   try {
+    const fileStat = fs.statSync(inputPath)
+    if (!fileStat.isFile()) throw new TypeError('artifact is not a regular file')
     return {
       label,
       path: inputPath,
+      identity: { dev: String(fileStat.dev), ino: String(fileStat.ino) },
       value: JSON.parse(fs.readFileSync(inputPath, 'utf8')),
     }
   } catch (error) {
@@ -133,18 +141,15 @@ function inspectPath(pathname) {
   }
 }
 
-function ensureSafeOutputParent(root, outputPath) {
+function resolveExistingOutputParent(root, outputPath) {
   const parentPath = path.dirname(outputPath)
   const relative = path.relative(root, parentPath)
   const segments = relative === '' ? [] : relative.split(path.sep)
   let current = root
   for (const segment of segments) {
     current = path.join(current, segment)
-    let stat = inspectPath(current)
-    if (!stat) {
-      fs.mkdirSync(current, { mode: 0o700 })
-      stat = fs.lstatSync(current)
-    }
+    const stat = inspectPath(current)
+    if (!stat) throw new TypeError('AI output parent does not exist')
     if (stat.isSymbolicLink()) throw new TypeError(`AI output parent contains a symbolic link: ${segment}`)
     if (!stat.isDirectory()) throw new TypeError(`AI output parent component is not a directory: ${segment}`)
   }
@@ -155,41 +160,212 @@ function ensureSafeOutputParent(root, outputPath) {
   return realParent
 }
 
-function assertSafeOutputTarget(outputPath) {
-  const stat = inspectPath(outputPath)
-  if (!stat) return
-  if (stat.isSymbolicLink()) throw new TypeError('AI output target must not be a symbolic link')
-  if (!stat.isFile()) throw new TypeError('AI output target must be a regular file')
+function sameIdentity(left, right) {
+  return left?.dev === right?.dev && left?.ino === right?.ino
 }
 
-function writeJsonAtomic(root, relativePath, value) {
-  const outputPath = resolveProjectPath(root, relativePath, 'AI output')
-  const outputParent = ensureSafeOutputParent(root, outputPath)
-  assertSafeOutputTarget(outputPath)
-  const serialized = JSON.stringify(value, null, 2)
-  if (typeof serialized !== 'string') throw new TypeError('Compiled scenario must be JSON serializable')
-  const temporaryPath = path.join(outputParent, `.${path.basename(outputPath)}.tmp-${process.pid}-${randomUUID()}`)
-  let fileDescriptor = null
+function parseHelperResponse(result) {
+  if (typeof result.stdout !== 'string' || result.stdout.trim() === '') return null
   try {
-    fileDescriptor = fs.openSync(temporaryPath, 'wx', 0o600)
-    fs.writeFileSync(fileDescriptor, `${serialized}\n`, 'utf8')
-    fs.fsyncSync(fileDescriptor)
-    fs.closeSync(fileDescriptor)
-    fileDescriptor = null
+    const response = JSON.parse(result.stdout)
+    return response && typeof response === 'object' && !Array.isArray(response) ? response : null
+  } catch {
+    return null
+  }
+}
 
-    ensureSafeOutputParent(root, outputPath)
-    assertSafeOutputTarget(outputPath)
-    fs.renameSync(temporaryPath, outputPath)
-  } catch (error) {
-    if (fileDescriptor !== null) fs.closeSync(fileDescriptor)
-    try {
-      fs.unlinkSync(temporaryPath)
-    } catch (cleanupError) {
-      if (cleanupError.code !== 'ENOENT') throw cleanupError
+function runOutputHelper(output, request) {
+  const result = childProcess.spawnSync('python3', [secureOutputHelper], {
+    encoding: 'utf8',
+    input: JSON.stringify(request),
+    stdio: ['pipe', 'pipe', 'pipe', output.parentDescriptor],
+  })
+  // The inherited fd shares one open-file description; explicitly release its helper-acquired flock.
+  const unlock = childProcess.spawnSync(
+    'python3',
+    ['-c', 'import fcntl; fcntl.flock(3, fcntl.LOCK_UN)'],
+    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe', output.parentDescriptor] },
+  )
+  if (unlock.error || unlock.status !== 0) throw new TypeError('Secure AI output lock could not be released')
+  if (result.error) throw new TypeError('Secure AI output helper is unavailable')
+  return { processStatus: result.status, response: parseHelperResponse(result) }
+}
+
+function busyOutputError() {
+  return new TypeError('Another AI output transaction is still in progress')
+}
+
+function inspectBoundOutputTarget(output) {
+  const result = runOutputHelper(output, { operation: 'inspect', targetName: output.targetName })
+  if (result.processStatus === 76 || result.response?.status === 'busy') throw busyOutputError()
+  if (result.processStatus !== 0 || result.response?.status !== 'ok' || !result.response.target) {
+    throw new TypeError('AI output target could not be inspected safely')
+  }
+  const target = result.response.target
+  if (target.kind === 'missing') return { kind: 'missing' }
+  if (target.kind === 'symlink') throw new TypeError('AI output target must not be a symbolic link')
+  if (target.kind !== 'file') throw new TypeError('AI output target must be a regular file')
+  return target
+}
+
+function recoverOutput(output, operationId, { allowConflict = false } = {}) {
+  const request = { operation: 'recover', journalName: output.journalName }
+  if (operationId) request.operationId = operationId
+  const result = runOutputHelper(output, request)
+  if (result.processStatus === 76 || result.response?.status === 'busy') throw busyOutputError()
+  const allowed = new Set(['none', 'published', 'unpublished', 'conflict', 'conflict-preserved'])
+  if (!allowed.has(result.response?.status) || ![0, 73].includes(result.processStatus)) {
+    throw new TypeError('AI output transaction could not be recovered safely')
+  }
+  if (!allowConflict && ['conflict', 'conflict-preserved'].includes(result.response.status)) {
+    throw new TypeError('A previous AI output transaction conflicts with the current target')
+  }
+  return result.response
+}
+
+function assertOutputParentStillBound(output) {
+  let realParent
+  let currentIdentity
+  try {
+    realParent = fs.realpathSync(output.parentPath)
+    const currentStat = fs.statSync(realParent)
+    currentIdentity = { dev: String(currentStat.dev), ino: String(currentStat.ino) }
+  } catch {
+    throw new TypeError('AI output parent changed during write')
+  }
+  if (!isInsideProject(output.root, realParent, { allowRoot: true }) ||
+      !sameIdentity(currentIdentity, output.parentIdentity)) {
+    throw new TypeError('AI output parent changed during write')
+  }
+}
+
+function finalizeOutput(output, operationId, publishedIdentity) {
+  const request = {
+    operation: 'finalize',
+    journalName: output.journalName,
+    operationId,
+    publishedIdentity,
+  }
+  let result = runOutputHelper(output, request)
+  if (result.processStatus === 76 || result.response?.status === 'busy') throw busyOutputError()
+  if (result.processStatus === 0 && result.response?.status === 'finalized' &&
+      result.response.operationId === operationId) return
+  result = runOutputHelper(output, request)
+  if (result.processStatus === 76 || result.response?.status === 'busy') throw busyOutputError()
+  if (result.processStatus === 0 && ['finalized', 'none'].includes(result.response?.status) &&
+      result.response.operationId === operationId) {
+    const target = inspectBoundOutputTarget(output)
+    if (target.kind === 'file' && sameIdentity(target.identity, publishedIdentity)) return
+  }
+  throw new TypeError('AI output acknowledgement failed')
+}
+
+function assertOutputDoesNotOverwriteInput(output, inputArtifacts) {
+  const collision = inputArtifacts.find((artifact) => {
+    if (output.outputPath === artifact.path) return true
+    return output.target.kind === 'file' && sameIdentity(output.target.identity, artifact.identity)
+  })
+  if (collision) throw new TypeError(`AI output must not overwrite the ${collision.label} input artifact`)
+}
+
+function prepareCompileOutput(root, relativePath, inputArtifacts) {
+  const outputPath = resolveProjectPath(root, relativePath, 'AI output')
+  const parentPath = path.dirname(outputPath)
+  const realParent = resolveExistingOutputParent(root, outputPath)
+  const parentStat = fs.statSync(realParent)
+  const parentIdentity = { dev: String(parentStat.dev), ino: String(parentStat.ino) }
+  let parentDescriptor = null
+  try {
+    parentDescriptor = fs.openSync(
+      realParent,
+      fs.constants.O_RDONLY | fs.constants.O_DIRECTORY | fs.constants.O_NOFOLLOW,
+    )
+    const openedStat = fs.fstatSync(parentDescriptor)
+    const openedIdentity = { dev: String(openedStat.dev), ino: String(openedStat.ino) }
+    if (!openedStat.isDirectory() || !sameIdentity(openedIdentity, parentIdentity)) {
+      throw new TypeError('AI output parent changed while it was being opened')
     }
+    const output = {
+      root,
+      outputPath,
+      parentPath,
+      parentDescriptor,
+      parentIdentity,
+      targetName: path.basename(outputPath),
+      journalName: `.${path.basename(outputPath)}.transaction.json`,
+    }
+    assertOutputParentStillBound(output)
+    const recovery = recoverOutput(output)
+    if (recovery.status === 'published') {
+      finalizeOutput(output, recovery.operationId, recovery.publishedIdentity)
+    }
+    output.target = inspectBoundOutputTarget(output)
+    assertOutputDoesNotOverwriteInput(output, inputArtifacts)
+    return output
+  } catch (error) {
+    if (parentDescriptor !== null) fs.closeSync(parentDescriptor)
     throw error
   }
-  return outputPath
+}
+
+function closeCompileOutput(output) {
+  if (output?.parentDescriptor !== null) {
+    fs.closeSync(output.parentDescriptor)
+    output.parentDescriptor = null
+  }
+}
+
+function writeJsonAtomic(output, value, { beforeCommit, afterCommit, filesystemFailpoint } = {}) {
+  const serialized = JSON.stringify(value, null, 2)
+  if (typeof serialized !== 'string') throw new TypeError('Compiled scenario must be JSON serializable')
+  assertOutputParentStillBound(output)
+  if (beforeCommit) beforeCommit()
+  const operationId = randomUUID()
+  const nonce = `${process.pid}-${operationId}`
+  const result = runOutputHelper(output, {
+    operation: 'commit',
+    operationId,
+    mode: output.target.kind === 'missing' ? 'noreplace' : 'replace',
+    targetName: output.targetName,
+    tempName: `.${output.targetName}.tmp-${nonce}`,
+    backupName: `.${output.targetName}.bak-${nonce}`,
+    journalName: output.journalName,
+    expectedTarget: output.target,
+    contents: Buffer.from(`${serialized}\n`, 'utf8').toString('base64'),
+    failpoint: filesystemFailpoint,
+  })
+  if (result.processStatus === 76 || result.response?.status === 'busy') throw busyOutputError()
+  let publishedIdentity = result.processStatus === 0 && result.response?.status === 'committed' &&
+    result.response.operationId === operationId
+    ? result.response.publishedIdentity
+    : null
+  if (!publishedIdentity) {
+    const failureStatus = result.response?.status
+    const recovery = recoverOutput(output, operationId, { allowConflict: true })
+    if (recovery.status === 'published' && recovery.operationId === operationId) {
+      publishedIdentity = recovery.publishedIdentity
+    } else if (['conflict', 'conflict-preserved', 'exists'].includes(failureStatus) ||
+        ['conflict', 'conflict-preserved'].includes(recovery.status)) {
+      throw new TypeError('AI output changed before it could be committed safely')
+    } else {
+      throw new TypeError('AI output could not be committed safely')
+    }
+  }
+  assertOutputParentStillBound(output)
+  let target = inspectBoundOutputTarget(output)
+  if (target.kind !== 'file' || !sameIdentity(target.identity, publishedIdentity)) {
+    throw new TypeError('AI output changed after publication')
+  }
+  finalizeOutput(output, operationId, publishedIdentity)
+  if (afterCommit) afterCommit()
+  assertOutputParentStillBound(output)
+  target = inspectBoundOutputTarget(output)
+  if (target.kind !== 'file' || !sameIdentity(target.identity, publishedIdentity)) {
+    throw new TypeError('AI output changed after publication')
+  }
+  const outputStat = fs.statSync(output.outputPath)
+  if ((outputStat.mode & 0o777) !== 0o600) throw new TypeError('AI output permissions are not 0600')
+  return output.outputPath
 }
 
 function assertTheoryRunReadyState(theoryRun) {
@@ -303,26 +479,15 @@ function assertReadyTheoryRun(theoryRun, inputs) {
   return theoryRun.theorySystem
 }
 
-function assertOutputDoesNotOverwriteInput(root, relativePath, inputArtifacts) {
-  const outputPath = resolveProjectPath(root, relativePath, 'AI output')
-  const candidatePaths = new Set([outputPath])
-  const outputStat = inspectPath(outputPath)
-  if (outputStat && !outputStat.isSymbolicLink()) candidatePaths.add(fs.realpathSync(outputPath))
-  const collision = inputArtifacts.find((artifact) => {
-    if (candidatePaths.has(artifact.path)) return true
-    if (!outputStat || outputStat.isSymbolicLink()) return false
-    const inputStat = fs.statSync(artifact.path)
-    return outputStat.dev === inputStat.dev && outputStat.ino === inputStat.ino
-  })
-  if (collision) throw new TypeError(`AI output must not overwrite the ${collision.label} input artifact`)
-}
-
 async function runCommand({
   argv = process.argv.slice(2),
   env = process.env,
   projectRoot: root = projectRoot,
-  providerFactory = createOpenAICompatibleProvider,
+  providerFactory = createMiniMaxM27Provider,
   compile = runScenarioCompilation,
+  beforeOutputCommit,
+  afterOutputCommit,
+  filesystemFailpoint,
 } = {}) {
   const options = parseArgs(argv)
   if (options.help) return { kind: 'help', text: usage() }
@@ -354,33 +519,42 @@ async function runCommand({
   }
   const theorySystem = assertReadyTheoryRun(theoryRun, inputs)
   const verticalSliceArtifact = readJsonArtifact(realRoot, paths.verticalSlice, 'Vertical slice')
-  assertOutputDoesNotOverwriteInput(realRoot, paths.output, [
+  const protectedInputs = [
     theoryRunArtifact,
     ...Object.values(inputArtifacts),
     verticalSliceArtifact,
-  ])
-
-  const provider = providerFactory({
-    baseUrl: env.PROGRAM_E_AI_BASE_URL,
-    apiKey: env.PROGRAM_E_AI_API_KEY,
-    model: env.PROGRAM_E_AI_MODEL,
-  })
-  const compiled = await compile({
-    provider,
-    ledger: inputs.ledger,
-    theoryCatalog: inputs.theoryCatalog,
+  ]
+  const compilationInputs = {
+    ...inputs,
+    theoryRun,
     theorySystem,
     verticalSlice: verticalSliceArtifact.value,
-  })
-  if (compiled?.capabilities?.realModelUsed !== true) {
-    throw new TypeError('Scenario compiler did not produce an attributable live-model result; output was not written')
   }
-  const outputPath = writeJsonAtomic(realRoot, paths.output, compiled)
-  return {
-    kind: 'compiled',
-    compiled,
-    outputPath,
-    outputRelative: path.relative(realRoot, outputPath),
+  prepareScenarioCompilation(compilationInputs)
+  const output = prepareCompileOutput(realRoot, paths.output, protectedInputs)
+  try {
+    const provider = providerFactory({
+      baseUrl: env.PROGRAM_E_AI_BASE_URL,
+      apiKey: env.PROGRAM_E_AI_API_KEY,
+      model: env.PROGRAM_E_AI_MODEL,
+    })
+    const compiled = await compile({ provider, ...compilationInputs })
+    if (compiled?.capabilities?.realModelUsed !== true) {
+      throw new TypeError('Scenario compiler did not produce an attributable live-model result; output was not written')
+    }
+    const outputPath = writeJsonAtomic(output, compiled, {
+      beforeCommit: beforeOutputCommit,
+      afterCommit: afterOutputCommit,
+      filesystemFailpoint,
+    })
+    return {
+      kind: 'compiled',
+      compiled,
+      outputPath,
+      outputRelative: path.relative(realRoot, outputPath),
+    }
+  } finally {
+    closeCompileOutput(output)
   }
 }
 

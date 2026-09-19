@@ -279,6 +279,7 @@ function normalizeReview(review, mapping) {
   requireNoUnknownFields(review, REVIEW_FIELDS, 'Theory review')
   if (review.schemaVersion !== 'theory-review/1.0') throw new TypeError('Unsupported theory review schema')
   if (!['approve', 'revise', 'reject'].includes(review.decision)) throw new TypeError('Theory review has unsupported decision')
+  if (!isSha256Digest(review.targetDigest)) throw new TypeError('Theory review requires a SHA-256 target digest')
   if (!isNonEmptyString(review.reviewer) || !isNonEmptyString(review.reviewedAt)) {
     throw new TypeError('Theory review requires reviewer and reviewedAt')
   }
@@ -286,11 +287,14 @@ function normalizeReview(review, mapping) {
     throw new TypeError('Theory review feedback must be an array of text')
   }
   if (!Array.isArray(review.mappingDecisions)) throw new TypeError('Theory review requires mappingDecisions')
-  const knownMappings = new Set((mapping.mappings || []).map((item) => item.id))
+  const knownMappings = mapping
+    ? new Set((mapping.mappings || []).map((item) => item.id))
+    : null
   const decisions = new Map()
   for (const item of review.mappingDecisions) {
     requireNoUnknownFields(item, REVIEW_DECISION_FIELDS, 'Theory mapping review decision')
-    if (!knownMappings.has(item.mappingId)) throw new TypeError(`Theory review references unknown mapping: ${item.mappingId}`)
+    if (!isNonEmptyString(item.mappingId)) throw new TypeError('Theory mapping review decision requires mappingId')
+    if (knownMappings && !knownMappings.has(item.mappingId)) throw new TypeError(`Theory review references unknown mapping: ${item.mappingId}`)
     if (decisions.has(item.mappingId)) throw new TypeError(`Theory review duplicates mapping decision: ${item.mappingId}`)
     if (!['approve', 'revise', 'reject'].includes(item.decision)) throw new TypeError(`Theory review has unsupported mapping decision: ${item.decision}`)
     if (!Array.isArray(item.reasonCodes) || item.reasonCodes.length === 0 || item.reasonCodes.some((code) => !isNonEmptyString(code))) {
@@ -298,7 +302,10 @@ function normalizeReview(review, mapping) {
     }
     decisions.set(item.mappingId, item)
   }
-  if (review.decision !== 'reject' && [...knownMappings].some((id) => !decisions.has(id))) {
+  if (review.decision !== 'reject' && decisions.size === 0) {
+    throw new TypeError('Theory review must include mapping decisions')
+  }
+  if (knownMappings && review.decision !== 'reject' && [...knownMappings].some((id) => !decisions.has(id))) {
     throw new TypeError('Theory review must decide every proposed mapping')
   }
   if (review.decision === 'approve' && [...decisions.values()].some((item) => item.decision !== 'approve')) {
@@ -311,8 +318,11 @@ function normalizeReview(review, mapping) {
   return { ...unsigned, id: `theory-review:${digestValue(unsigned)}` }
 }
 
-function applyTheoryReview({ run, review } = {}) {
-  const currentValidation = validateTheoryAgentRun(run)
+function applyTheoryReview({
+  run, review, approvedExtractions, evidenceReview, ledger, theoryCatalog,
+} = {}) {
+  const inputs = { approvedExtractions, evidenceReview, ledger, theoryCatalog }
+  const currentValidation = validateTheoryAgentRun(run, inputs)
   if (!currentValidation.valid) throw new TypeError(`Theory agent run failed validation: ${currentValidation.errors.join('; ')}`)
   if (run?.state !== 'AWAITING_HUMAN') throw new TypeError('Theory review can only be applied at AWAITING_HUMAN')
   if (review?.targetDigest !== run.checkpoint?.targetDigest) throw new TypeError('Theory review target digest does not match the pending mapping')
@@ -325,7 +335,7 @@ function applyTheoryReview({ run, review } = {}) {
   const nextEvent = event(next.state, review.reviewedAt, `Human review decision: ${review.decision}.`, [digestValue(normalized)])
   nextEvent.revision = next.revision
   next.events.push(nextEvent)
-  const validation = validateTheoryAgentRun(next)
+  const validation = validateTheoryAgentRun(next, inputs)
   if (!validation.valid) throw new TypeError(`Theory agent run failed validation: ${validation.errors.join('; ')}`)
   return next
 }
@@ -451,27 +461,32 @@ function validateTheoryAgentRun(run, inputs) {
 
   if (!Array.isArray(run.reviews)) errors.push('Theory agent run requires review history')
   const reviews = Array.isArray(run.reviews) ? run.reviews : []
-  for (const [index, review] of reviews.entries()) {
-    collectUnknownFields(review, STORED_REVIEW_FIELDS, `Theory review history ${index + 1}`, errors)
-    if (review?.schemaVersion !== 'theory-review/1.0') errors.push(`Theory review history ${index + 1} has unsupported schema`)
-    if (!isNonEmptyString(review?.reviewer)) errors.push(`Theory review history ${index + 1} requires reviewer`)
-    parseTimestamp(review?.reviewedAt, `Theory review history ${index + 1} reviewedAt`, errors)
-    if (!isNonEmptyString(review?.id)) {
-      errors.push(`Theory review history ${index + 1} requires id`)
-    } else {
-      const unsigned = structuredClone(review)
-      delete unsigned.id
-      if (review.id !== `theory-review:${digestValue(unsigned)}`) errors.push(`Theory review history ${index + 1} content digest mismatch`)
-    }
-  }
+  const normalizedReviews = reviews.map((review, index) => {
+    const label = `Theory review history ${index + 1}`
+    parseTimestamp(review?.reviewedAt, `${label} reviewedAt`, errors)
+    return validateStoredReview(review, undefined, errors, label)
+  })
   const reviewEvents = Array.isArray(run.events)
     ? run.events.filter((item) => ['APPROVED', 'REVISION_REQUESTED', 'REJECTED'].includes(item?.state))
     : []
   if (reviews.length !== reviewEvents.length) errors.push('Theory review history must match review events')
+  const reviewStates = new Map([
+    ['approve', 'APPROVED'], ['revise', 'REVISION_REQUESTED'], ['reject', 'REJECTED'],
+  ])
   for (const [index, review] of reviews.entries()) {
     const reviewEvent = reviewEvents[index]
-    if (reviewEvent?.at !== review.reviewedAt || !reviewEvent?.artifactDigests?.includes(digestValue(review))) {
+    const normalized = normalizedReviews[index]
+    if (reviewEvent?.at !== review.reviewedAt || reviewEvent?.artifactDigests?.length !== 1 ||
+        reviewEvent.artifactDigests[0] !== digestValue(review)) {
       errors.push(`Theory review history ${index + 1} does not match its event artifact`)
+    }
+    if (normalized && reviewEvent?.state !== reviewStates.get(normalized.decision)) {
+      errors.push(`Theory review history ${index + 1} review decision does not match its event state`)
+    }
+    const reviewEventIndex = Array.isArray(run.events) ? run.events.indexOf(reviewEvent) : -1
+    const proposalEvent = reviewEventIndex > 0 ? run.events[reviewEventIndex - 1] : null
+    if (proposalEvent?.state !== 'AWAITING_HUMAN' || proposalEvent?.artifactDigests?.[0] !== review.targetDigest) {
+      errors.push(`Theory review history ${index + 1} review target does not match its proposal mapping digest`)
     }
   }
 
@@ -502,6 +517,12 @@ function validateTheoryAgentRun(run, inputs) {
     if (run.audit.mappingDigest !== mappingDigest) errors.push('Theory audit mapping digest mismatch')
     if (!Array.isArray(run.audit.errors) || run.audit.errors.length > 0) errors.push('Persisted Theory audit must contain no errors')
     if (!Array.isArray(run.audit.unmappedClaimProposalIds)) errors.push('Theory audit requires unmapped claim proposals')
+    if (inputs && run.mapping && typeof run.mapping === 'object' && !Array.isArray(run.mapping)) {
+      const rebuiltAudit = auditTheoryMapping(run.mapping, inputs)
+      if (digestValue(run.audit) !== digestValue(rebuiltAudit)) {
+        errors.push('Theory audit does not match the canonical mapping audit for current inputs')
+      }
+    }
   }
   if (!collectUnknownFields(run.capabilities, CAPABILITY_FIELDS, 'Theory agent capabilities', errors)) {
     errors.push('Theory agent run requires capabilities')
@@ -594,6 +615,18 @@ function validateTheoryAgentRun(run, inputs) {
       if (inputs) {
         const systemValidation = validateTheorySystem(run.theorySystem, inputs)
         if (!systemValidation.valid) errors.push(...systemValidation.errors.map((error) => `Theory System is invalid: ${error}`))
+        try {
+          const rebuiltSystem = finalizeTheorySystem({
+            mapping: run.mapping,
+            review: run.review,
+            ...inputs,
+          })
+          if (digestValue(rebuiltSystem) !== digestValue(run.theorySystem)) {
+            errors.push('Ready Theory System does not match canonical reconstruction from the approved mapping')
+          }
+        } catch {
+          errors.push('Ready Theory System canonical reconstruction failed')
+        }
       }
     }
   }

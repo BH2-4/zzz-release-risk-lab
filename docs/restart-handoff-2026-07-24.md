@@ -1,7 +1,7 @@
 # ProgramE 重启交接记录
 
 日期：2026-07-24
-状态：阶段性收尾，等待新项目结构接管
+状态：Phase 1 本地门禁已转绿；当前默认 Theory run 已重新生成并处于 `READY_FOR_COMPILATION`
 
 ## 不变的产品目标
 
@@ -23,20 +23,29 @@ ProgramE 要把《绝区零》全球发行中的公开证据、社会学理论�
 
 当前没有模型 Key，也没有真实模型编译产物。离线理论映射是手写的 `deterministic-fixture`，必须保持 `realModelUsed: false`。人工 reviewer 名称是本地声明，不是密码学身份认证。
 
-## 本次收尾核验
+## 当前本地核验
 
-已通过 26 项专项测试：
+本地已完成默认 Mac 门禁与 Theory CLI 生命周期：
 
-- `compile-scenario` CLI：11/11。
-- Theory Agent lineage 安全：6/6。
-- Evidence Review 与 Theory Agent 主流程：9/9。
+- Focused Theory gates：
+  `tests/theory-agent-cli-authority.test.js`、`tests/theory-agent-security.test.js`、`tests/theory-agent.test.js`、`tests/compile-scenario-cli.test.js`、`tests/theory-agent-cli.test.js`、`tests/theory-agent-cli-races.test.js` 共 60/60 通过。
+- 全量 Node tests：
+  `npm test` 共 153/153 通过。
+- Build gate：
+  `npm run build` 通过。
+- E2E gate：
+  `npm run test:e2e` 在当前 Mac 上通过；首次未提权运行因 sandbox 端口绑定限制失败，提权后 Playwright 正常起服并完成 10 passed / 4 skipped。
+- Hygiene：
+  `git diff --check` 通过；本地未发现需要记录的新 HIGH 级阻断。
 
-已执行全量 `npm test`：
+当前默认 Theory run 已按 `start --demo --replace -> review approve -> resume -> status` 串行重建：
 
-- 总计 124 项，118 项通过，6 项失败。
-- 6 项失败全部来自 `tests/theory-agent-cli.test.js`，且与下节刻意保留的红灯逐项对应。
-- `git diff --check` 通过；公开仓库敏感凭据模式扫描未发现命中。
-- 独立 checkpoint 复审未发现 HIGH/CRITICAL 阻断问题。
+- `runId = zzz-fade-20260724045215`
+- `state = READY_FOR_COMPILATION`
+- `revision = 3`
+- `theorySystemId = theory-system:sha256:432e0f6273403bb3f4cae5afaac4ba61c6dde9a8e4e5e2b118a58c9427e84912`
+- `provenance.mode = deterministic-fixture`
+- `realModelUsed = false`
 
 证据账本已从 Codex 会话日志完整恢复并双重校验：
 
@@ -45,27 +54,18 @@ ProgramE 要把《绝区零》全球发行中的公开证据、社会学理论�
 - `validateEvidenceLedger = valid`
 - `digestValue = sha256:f3c80f1881c2e75583a0cd76c20ba5df6f5e603de926361ceb6b1e6ba6690e05`
 
-## 刻意保留的红灯
+## 当前边界
 
-`tests/theory-agent-cli.test.js` 新增的 6 项回归测试尚未驱动实现完成：
-
-1. 离线 Theory System provenance 必须保留夹具相对路径和 SHA-256。
-2. 输入符号链接的 realpath 不得逃出项目。
-3. 输出目录任一层不得是符号链接。
-4. 临时文件必须使用随机名、`wx` 独占创建和原子替换。
-5. run 输出不得覆盖 ledger、extraction、Evidence Review、理论目录或夹具输入。
-6. JSON 解析错误不得回显原始内容。
-
-其中第 5 项已确认可在旧 CLI 上触发；回归测试已改为只攻击临时 ledger 副本，不再触碰正式数据。
+- 当前离线 Theory authority 仍然来自仓库内 `deterministic-fixture`，不是实时模型结果。
+- `manual-demo-curator` 只是本地 reviewer 声明，不是密码学身份。
+- 当前权威 run 只说明 Theory System、审批链、输入摘要和内容寻址已经恢复，不说明真实模型编译或链上提交已经完成。
 
 ## 下次启动的第一批任务
 
-重启后先从本文件恢复上下文，并执行 `git status --short --branch` 与 `npm test` 确认接管基线；不要基于旧 Theory System ID 继续编译。
+重启后先从本文件恢复上下文，并执行 `git status --short --branch` 确认工作树；不要再把旧 Theory System ID 当成当前权威。
 
-1. 用 `compile-scenario.js` 已验证的安全路径和原子写入模式改造 `run-theory-agent.js`，使上述 6 项 CLI 测试转绿。
-2. 收紧 Theory mapping/System provenance：`live-model` 必须同时具有 provider、model、requestId 且 `realModelUsed: true`；`deterministic-fixture` 必须包含 fixturePath/fixtureDigest 且不得装成模型输出。
-3. 在 CLI 全绿后重跑 `start --demo -> review -> resume -> status`，生成新的 Theory System ID。
-4. 旧 ID `theory-system:sha256:5c22be0df832eacac9f41664c8905580f8f7d19223ce294d8be677631186f8f2` 已因证据摘要与时间链变化而失效，不得继续引用。
-5. 最后执行全量测试、覆盖率、`git diff --check`、独立代码/安全复审，清除所有 HIGH finding 后再宣称该阶段完成。
-
-`experiments/output/theory/zzz-1-4-fade-run.json` 是旧输入下的过期产物，只能当调试记录，不是当前可编译的权威 run。
+1. 进入 Phase 2，补全固定案例的公开证据扩写、理论库映射和一次真实模型编译闭环；若无真实凭据，只能继续保留离线 fallback，不得宣称“真实 AI MVP 已完成”。
+2. 保持当前文档边界与 CI 实现一致：赛前 PR 复验使用现有单一 macOS GitHub Actions job，不增加 Linux/Windows jobs 或操作系统矩阵。
+3. 在进入链上闭环前继续保持用户确认：只允许 Injective testnet，且钱包连接、合约部署/选择、签名与交易都要人工确认。
+4. 旧 ID `theory-system:sha256:5c22be0df832eacac9f41664c8905580f8f7d19223ce294d8be677631186f8f2` 已失效，只能作为历史记录；当前权威 ID 是 `theory-system:sha256:432e0f6273403bb3f4cae5afaac4ba61c6dde9a8e4e5e2b118a58c9427e84912`。
+5. 当前 `experiments/output/theory/zzz-1-4-fade-run.json` 已是默认可编译权威 run；后续如输入摘要、审批链或 Theory System 再变化，必须重新走完整 CLI 生命周期，不得手改 JSON 或 ID。

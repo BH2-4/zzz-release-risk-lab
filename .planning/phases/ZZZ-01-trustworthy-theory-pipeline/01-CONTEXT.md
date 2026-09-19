@@ -32,6 +32,12 @@ This phase fixes the six exposed Theory Agent CLI security/provenance regression
 - **D-10:** Phase 1 completes only when focused security tests, `npm run build`, full `npm test`, and `npm run test:e2e` all pass from a clean worktree.
 - **D-11:** No expected-failure waiver is allowed; all six current red tests must become green without weakening the tests.
 
+### Competition delivery boundary
+- **D-12:** The pre-competition supported platform is the current macOS demo machine. Cross-platform product support and cross-platform verification are post-competition work.
+- **D-13:** Delivery is PR-first: independent review and all three local gates must be green before pushing the feature branch; known-red commits never go to `main`.
+- **D-14:** Local filesystem safety assumes a single-user cooperative-writer contract and requires project writers to obey the parent-directory `flock`. A non-cooperating same-UID process with direct project-directory authority is an explicit residual risk, not a defended property.
+- **D-15:** Phase 1 adds no emergent Agent capability. The competition MVP later reuses the existing deterministic 125-representative simulation and 3D replay; hybrid cognition, relationship/Reverse emergence, and cross-platform delivery remain deferred.
+
 ### the agent's Discretion
 The agent may choose helper names, internal function boundaries, and exact safe error wording while preserving the behaviors above and existing public CLI syntax. The user explicitly delegated discuss and implementation choices to the agent for this GSD lifecycle.
 
@@ -96,9 +102,9 @@ The agent may choose helper names, internal function boundaries, and exact safe 
 ## Deferred Ideas
 
 - Real model invocation and recorded-model replay belong to Phase 2.
-- Hybrid memory, relationships, public expression, and Reverse generation belong to Phase 3.
-- 3D integration belongs to Phase 4.
-- Injective deployment or transaction execution belongs to Phase 5 and remains user-confirmed.
+- Injective deployment or transaction execution belongs to Phase 3 and remains user-confirmed.
+- Non-macOS support, CI matrices, and cross-platform verification are post-competition work.
+- Hybrid cognitive Agent behavior, relationship/Reverse emergence, and a new runtime-driven 3D observer are post-competition work.
 
 </deferred>
 

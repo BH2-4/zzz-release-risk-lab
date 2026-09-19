@@ -57,11 +57,53 @@ async function readyRun() {
     runId: 'security-ready-run',
     now: '2026-07-24T14:00:00+08:00',
   })
-  const approved = applyTheoryReview({ run: pending, review: approvingReview(pending) })
+  const approved = applyTheoryReview({ ...inputs, run: pending, review: approvingReview(pending) })
   return resumeTheoryAgent({
     ...inputs,
     run: approved,
     now: '2026-07-24T14:02:00+08:00',
+  })
+}
+
+async function revisedReadyRun() {
+  const pending = await startTheoryAgent({
+    ...inputs,
+    provider: provider(),
+    runId: 'security-review-history-run',
+    now: '2026-07-24T14:00:00+08:00',
+  })
+  const revisionRequested = applyTheoryReview({
+    ...inputs,
+    run: pending,
+    review: {
+      schemaVersion: 'theory-review/1.0',
+      targetDigest: pending.checkpoint.targetDigest,
+      decision: 'revise',
+      mappingDecisions: pending.mapping.mappings.map((mapping) => ({
+        mappingId: mapping.id,
+        decision: 'revise',
+        reasonCodes: ['REVISION_REQUIRED'],
+      })),
+      reviewer: 'security-test-reviewer',
+      reviewedAt: '2026-07-24T14:01:00+08:00',
+      feedback: ['Retain the bounded mechanism and revise the proposal.'],
+    },
+  })
+  const revised = await resumeTheoryAgent({
+    ...inputs,
+    run: revisionRequested,
+    provider: provider(),
+    now: '2026-07-24T14:02:00+08:00',
+  })
+  const approved = applyTheoryReview({
+    ...inputs,
+    run: revised,
+    review: approvingReview(revised, '2026-07-24T14:03:00+08:00'),
+  })
+  return resumeTheoryAgent({
+    ...inputs,
+    run: approved,
+    now: '2026-07-24T14:04:00+08:00',
   })
 }
 
@@ -132,6 +174,61 @@ test('finalized provenance tampering fails after the attacker recomputes content
   assert.match(validation.errors.join('; '), /provenance.*realModelUsed|realModelUsed.*provenance/i)
 })
 
+test('READY validation rebuilds the exact Theory System from the approved mapping', async () => {
+  const ready = await readyRun()
+  const tampered = structuredClone(ready)
+  tampered.theorySystem.approvedMappings[0].mechanism = 'RECOMPUTED_READY_SECRET_MECHANISM'
+  const unsignedSystem = structuredClone(tampered.theorySystem)
+  delete unsignedSystem.id
+  tampered.theorySystem.id = `theory-system:${digestValue(unsignedSystem)}`
+  tampered.events.at(-1).artifactDigests = [digestValue(tampered.theorySystem)]
+
+  const validation = validateTheoryAgentRun(tampered, inputs)
+  assert.equal(validation.valid, false)
+  assert.match(validation.errors.join('; '), /canonical reconstruction|approved mapping/i)
+})
+
+test('historical review decisions remain bound to their paired event states', async () => {
+  const ready = await revisedReadyRun()
+  assert.deepEqual(validateTheoryAgentRun(ready, inputs), { valid: true, errors: [] })
+
+  const tampered = structuredClone(ready)
+  const firstReview = tampered.reviews[0]
+  firstReview.decision = 'approve'
+  firstReview.mappingDecisions = firstReview.mappingDecisions.map((item) => ({
+    ...item,
+    decision: 'approve',
+    reasonCodes: ['HUMAN_VERIFIED'],
+  }))
+  firstReview.feedback = []
+  const unsignedReview = structuredClone(firstReview)
+  delete unsignedReview.id
+  firstReview.id = `theory-review:${digestValue(unsignedReview)}`
+  const firstReviewEvent = tampered.events.find((item) => item.state === 'REVISION_REQUESTED')
+  firstReviewEvent.artifactDigests = [digestValue(firstReview)]
+
+  const validation = validateTheoryAgentRun(tampered, inputs)
+  assert.equal(validation.valid, false)
+  assert.match(validation.errors.join('; '), /review decision.*event state|event state.*review decision/i)
+})
+
+test('historical review targets bind to the mapping digest position in proposal events', async () => {
+  const ready = await revisedReadyRun()
+  const tampered = structuredClone(ready)
+  const firstProposalEvent = tampered.events.find((item) => item.state === 'AWAITING_HUMAN')
+  const firstReview = tampered.reviews[0]
+  firstReview.targetDigest = firstProposalEvent.artifactDigests[1]
+  const unsignedReview = structuredClone(firstReview)
+  delete unsignedReview.id
+  firstReview.id = `theory-review:${digestValue(unsignedReview)}`
+  const firstReviewEvent = tampered.events.find((item) => item.state === 'REVISION_REQUESTED')
+  firstReviewEvent.artifactDigests = [digestValue(firstReview)]
+
+  const validation = validateTheoryAgentRun(tampered, inputs)
+  assert.equal(validation.valid, false)
+  assert.match(validation.errors.join('; '), /review target.*mapping digest|mapping digest.*review target/i)
+})
+
 test('run events must form a complete monotonic state transition history', async () => {
   const ready = await readyRun()
   const tampered = structuredClone(ready)
@@ -164,7 +261,7 @@ test('a review timestamp cannot move backwards from the pending event', async ()
   })
 
   assert.throws(
-    () => applyTheoryReview({ run: pending, review: approvingReview(pending, '2026-07-24T13:59:00+08:00') }),
+    () => applyTheoryReview({ ...inputs, run: pending, review: approvingReview(pending, '2026-07-24T13:59:00+08:00') }),
     /timestamp|event time|before/i,
   )
 })

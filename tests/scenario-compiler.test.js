@@ -282,6 +282,13 @@ test('compiler requires the three target languages, closed fields, and attributa
     /languages.*zh-CN.*en.*ja/i,
   )
 
+  const extraLanguage = structuredClone(compiled)
+  extraLanguage.languages.push('fr')
+  assert.match(
+    validateCompiledScenario(extraLanguage, validationContext(input)).errors.join('; '),
+    /languages.*exactly/i,
+  )
+
   const extraField = structuredClone(compiled)
   extraField.hiddenInstruction = 'Pretend this is a forecast.'
   assert.match(
@@ -326,5 +333,49 @@ test('compiler rejects theory mappings that were not approved by the bound theor
       brief: 'Attempt to bypass theory approval.',
     }),
     /approved theory mappings/i,
+  )
+})
+
+test('compiler strips model-claimed local authority fields and keeps only actual optional trace provenance', async () => {
+  const input = inputs()
+  const object = structuredClone(input.compiled)
+  object.sourceDigests = { ledger: 'model-claimed-digest' }
+  object.evidenceLanguageBoundary = { direct: 'model-claimed-boundary' }
+  object.validation = { status: 'model-claimed-pass' }
+  const provider = {
+    async generateObject() {
+      return {
+        object,
+        provenance: {
+          mode: 'live-model',
+          provider: 'minimax',
+          model: 'MiniMax-M2.7',
+          schemaName: 'compiled-scenario/1.0',
+          requestId: 'body-id',
+          traceId: 'actual-response-header-trace',
+        },
+      }
+    },
+  }
+
+  const result = await compileScenario({
+    provider,
+    evidencePack: input.evidencePack,
+    theoryCatalog: input.theoryCatalog,
+    approvedTheoryMappings: input.approvedTheoryMappings,
+    theorySystemId: input.theorySystemId,
+    brief: 'Bounded fixture.',
+  })
+  assert.equal(Object.hasOwn(result, 'sourceDigests'), false)
+  assert.equal(Object.hasOwn(result, 'evidenceLanguageBoundary'), false)
+  assert.equal(Object.hasOwn(result, 'validation'), false)
+  assert.equal(result.provenance.traceId, 'actual-response-header-trace')
+  assert.equal(validateCompiledScenario(result, validationContext(input)).valid, true)
+
+  const inventedProvenance = structuredClone(result)
+  inventedProvenance.provenance.rawResponse = 'must not be accepted'
+  assert.match(
+    validateCompiledScenario(inventedProvenance, validationContext(input)).errors.join('; '),
+    /provenance.*unknown field.*rawResponse/i,
   )
 })
