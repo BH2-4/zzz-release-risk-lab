@@ -1,3 +1,10 @@
+> **仓库已合并归档 / Repository consolidated**
+>
+> 活跃开发已迁移到 [BH2-4/MCSociologyMock](https://github.com/BH2-4/MCSociologyMock)。
+> 本项目的已发布版本保存在 [`labs/zzz-release-risk-lab`](https://github.com/BH2-4/MCSociologyMock/tree/main/labs/zzz-release-risk-lab)，原提交历史和未完成草稿分支均已保留。
+> 详情见 [仓库合并记录](https://github.com/BH2-4/MCSociologyMock/blob/main/docs/repository-consolidation-2026-10-10.md)。
+> 本仓库停止接收开发修改，原 PR 与 Actions 记录保留供查阅。
+
 # ZZZ Release Risk Lab / 绝区零地区发行风险沙盘
 
 > ProgramE · 真正 AI MVP 建设中 · 3D 演化观察器数据 Beta 0.4 · 非官方研究原型
